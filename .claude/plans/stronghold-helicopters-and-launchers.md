@@ -1,6 +1,9 @@
 # Stronghold helicopters and launchers
 
-Status: planned 2026-09-27, outline only. Not started. Card art and concept sheets are committed
+Status: code, sounds and settings implemented 2026-09-27 (stronghold, uncommitted); models not made yet, nothing
+checked in a client. Both helicopters carry their crew, the attack helicopter's pilot included; the RPG and
+anti-air launcher share the Zeus, one loaded at a time; no anticheat contract (Stronghold servers run without
+the anticheat). Card art and concept sheets are committed
 (stronghold `2f6933a`): `panorama/images/stronghold/{attack_helicopter,transport_helicopter,rpg,anti_air}.png`
 and `docs/concepts/*.jpg`.
 
