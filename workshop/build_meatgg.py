@@ -33,12 +33,11 @@ def main() -> None:
 
     # A compiled file whose source left the repo stays out of the addon.
     content = Path(__file__).parents[1] / "plugins" / "stronghold" / "content"
+    def stale(folder: str, names: list[str]) -> list[str]:
+        return [name for name in names if not has_source(content, (Path(folder) / name).relative_to(stronghold))]
+
     for folder in STRONGHOLD_CONTENT:
-        for file in (stronghold / folder).rglob("*"):
-            relative = file.relative_to(stronghold)
-            if file.is_file() and has_source(content, relative):
-                (meatgg / relative).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(file, meatgg / relative)
+        shutil.copytree(stronghold / folder, meatgg / folder, ignore=stale)
     shutil.copytree(Path(__file__).parent / "meatgg", meatgg, dirs_exist_ok=True)
 
     print(f"Filled {meatgg}. Update the meatgg item in the Workshop Manager.")
