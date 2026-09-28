@@ -172,8 +172,8 @@ The engine finds the loader because the deploy adds `Game csgo/addons/voltmod` d
 `addons/voltmod/plugins/<plugin>/plugin.json` and loads the plugins itself. The deploy does not
 install or touch Metamod; a server that already has it keeps it.
 
-The host and the plugins are one ABI: the host refuses a plugin built against a different
-`HostAbiVersion`. So `deploy package` always stages the host, the builder always puts it in the
+The host and the plugins are one build: the host refuses a plugin built for a different VoltMod
+version. So `deploy package` always stages the host, the builder always puts it in the
 payload, and a payload with no staged host fails the deploy rather than dropping plugins onto
 whatever host the server already runs.
 

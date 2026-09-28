@@ -50,7 +50,8 @@ uv run poe rcon "volt list" --server <id>
 
 `volt list` must list every plugin of the instance; an unknown command means the host did not
 load. One missing after a framework change means the host and plugins came from different builds
-(`HostAbiVersion`): rebuild and redeploy. Then test the behaviour with `rcon-debug`.
+(its refusal names both VoltMod versions): rebuild and redeploy. Each line shows the commit the
+plugin was built from, so a stale binary is visible there too. Then test the behaviour with `rcon-debug`.
 
 ## Failures
 
