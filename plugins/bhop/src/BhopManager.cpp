@@ -186,7 +186,8 @@ void BhopManager::OnPlayerDisconnect(Player& player)
 
 void BhopManager::OnRunCommandPre(int slot)
 {
-    if (_mode == Mode::Grants && VoltMod::IsValidSlot(slot) && _grantedSlots[slot])
+    const bool granted = VoltMod::IsValidSlot(slot) && _grantedSlots[slot];
+    if (_mode == Mode::Grants && granted)
     {
         _conVars.HoldRaw();
     }

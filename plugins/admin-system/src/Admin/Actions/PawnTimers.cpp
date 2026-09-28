@@ -46,8 +46,12 @@ void PawnTimers::OnDamage(VoltMod::DamageHit& hit)
         return;
     }
     const int slot = hit.Victim.AsPawn().Slot();
-    if (VoltMod::IsValidSlot(slot) && hit.Victim.Ref() == _timers[slot].Slapped &&
-        std::chrono::steady_clock::now() < _timers[slot].FallSafeUntil)
+    if (!VoltMod::IsValidSlot(slot))
+    {
+        return;
+    }
+    const auto& timer = _timers[slot];
+    if (hit.Victim.Ref() == timer.Slapped && std::chrono::steady_clock::now() < timer.FallSafeUntil)
     {
         hit.Blocked = true;
     }

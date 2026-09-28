@@ -28,7 +28,8 @@ static constexpr int64_t MinResumeSec = 15;
 void CheatCheckManager::PollPresenceIfDue(int targetSlot)
 {
     auto& pc = _checks[targetSlot];
-    if (pc.RoomCode.empty() || pc.PollInFlight || Time::Now() < pc.NextPollAtSec)
+    const bool due = !pc.RoomCode.empty() && !pc.PollInFlight && Time::Now() >= pc.NextPollAtSec;
+    if (!due)
     {
         return;
     }

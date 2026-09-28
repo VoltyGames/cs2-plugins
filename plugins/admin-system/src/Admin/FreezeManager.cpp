@@ -87,12 +87,14 @@ void FreezeManager::RecordPunishment(int64_t adminSteamId, std::string_view admi
 {
     RecordAudit(adminSteamId, adminName, action, targetSteamId, targetName, detail);
 
-    // The console, frozen admins and root admins never trip the rate check.
-    if (adminSteamId == 0 || !_config.Get().abuseProtection.enabled || IsFrozen(adminSteamId))
+    if (!_config.Get().abuseProtection.enabled)
     {
         return;
     }
-    if (_admins.HasPermission(adminSteamId, Permission::Root))
+    // The console, frozen admins and root admins never trip the rate check.
+    const bool exempt =
+        adminSteamId == 0 || IsFrozen(adminSteamId) || _admins.HasPermission(adminSteamId, Permission::Root);
+    if (exempt)
     {
         return;
     }
