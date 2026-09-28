@@ -10,7 +10,8 @@ or a particle effect. Models are built in the user's open Blender session throug
 MCP and Blender Source Tools. Particle effects need no Blender.
 
 The flow: check the tools, read what the plugin expects, build, review with the user, then export,
-compile, wire into the plugin and clean up. Nothing is exported before the user approves.
+compile, wire into the plugin, clean up and report the triangle counts. Nothing is exported before the
+user approves.
 
 ## Tools
 
@@ -126,6 +127,21 @@ scene, and give imported references a scene of their own.
 - **Team colour** goes on a thin glowing part that players see from a distance, such as a strip,
   with its own material remapped in `blue`/`red` material groups.
 
+### Triangles
+
+Trim a new or existing model only where nobody can see the difference: it must render the same
+before and after.
+
+| Trim | Keep |
+| --- | --- |
+| Faces buried inside another closed part, such as a wing root in the fuselage | Round parts' sides: 12 or more on a thin rod, 16–32 on a drum or pod |
+| Caps hidden where a tube or band meets a surface | Bevels, rounded ends and panel edges you can see |
+| Bevels on tiny parts, such as switches and straps | Rings along a curve that keep its outline smooth |
+
+- `objects.join` smooth-shades below 35°, so a round part with fewer than 11 sides shades as flat
+  facets and reads as a box.
+- Render the same views before and after a trim. Put back anything that reads flatter or boxier.
+
 ## 6. Animate
 
 `rig.skeleton` makes the bones and skins the mesh by vertex group. `rig.animate` records an action
@@ -201,6 +217,11 @@ images until they say the model is finished or ask to commit.
   `~/.codex/generated_images/` folders your runs added.
 - **Git:** `git status` shows only the files you meant to change. Commit with the `commit` skill
   when asked.
+
+## 11. Report
+
+End with each exported model's triangle count, and the count before for a model you changed:
+`sum(len(p.vertices) - 2 for p in ob.data.polygons)` on its render mesh.
 
 ## Particles
 
