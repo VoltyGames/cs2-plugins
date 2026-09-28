@@ -4,13 +4,14 @@ database:
   sslMode: require
 
 plugins:
-  # 3808651114 is the meatgg workshop addon: menus, rank icons and Stronghold in one download.
+  # 3809904923 is the meatgg workshop addon: menus, rank icons and Stronghold in one download.
+  # The previous item was 3808651114.
   admin-system:
     database: admin_system
     settings:
       plugin: { locale: ru }
       server: { tag: "${SERVER_TAG}", name: "${SERVER_NAME}" }
-      addonId: 3808651114
+      addonId: 3809904923
       menu: { panorama: true }
       punishments:
         templates:
@@ -42,11 +43,11 @@ plugins:
   anticheat: {}
   main-menu:
     settings:
-      addonId: 3808651114
+      addonId: 3809904923
   stronghold:
     settings:
       plugin: { locale: ru }
-      addonId: 3808651114
+      addonId: 3809904923
       economy: { startMoney: 5000 }
       features: { tanks: false }
 
