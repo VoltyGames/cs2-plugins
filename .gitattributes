@@ -8,4 +8,4 @@
 *.so binary
 
 # Compiled workshop files, copied into the addon as they are.
-workshop/** binary
+workshop/meatgg/** binary
