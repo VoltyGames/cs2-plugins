@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 DEFAULT_CLIENT = r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"
-STRONGHOLD_CONTENT = ("models", "materials", "particles", "soundevents", "sounds")
+STRONGHOLD_CONTENT = ("models", "materials", "particles", "scripts", "soundevents", "sounds")
 PANORAMA_OUTPUT = ("layout/custom_game", "styles/custom_game", "images/custom_game")
 SCREENS = ("main-menu", "admin-system", "stronghold")
 
