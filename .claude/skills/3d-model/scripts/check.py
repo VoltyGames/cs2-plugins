@@ -70,7 +70,7 @@ def main() -> int:
         source = plugin / "content"
         content = client / "content" / "csgo_addons" / args.plugin
         ok &= report(source.is_dir(), "addon source", str(source.relative_to(ROOT)))
-        kind = "junction" if content.is_junction() else "copy; compile.py mirrors into it"
+        kind = "junction" if content.is_junction() else "copy; content compile mirrors into it"
         ok &= report(content.is_dir(), "addon content folder", f"{content} ({kind})")
         missing = lfs_rules(plugin)
         report(

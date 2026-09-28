@@ -3,12 +3,19 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from deploy.bundle.server_assets import has_source
-
 DEFAULT_CLIENT = r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"
 STRONGHOLD_CONTENT = ("models", "materials", "particles", "scripts", "soundevents", "sounds")
 PANORAMA_OUTPUT = ("layout/custom_game", "styles/custom_game", "images/custom_game")
 SCREENS = ("main-menu", "admin-system", "stronghold")
+# Compiled one to one from a source file; textures and sounds get generated names.
+ONE_TO_ONE = (".vmdl_c", ".vpcf_c", ".vsndevts_c", ".vdata_c", ".vmat_c")
+
+
+def has_source(content: Path, compiled: Path) -> bool:
+    """Whether `compiled` (relative, e.g. models/x/x.vmdl_c) still has its source in `content`."""
+    if compiled.suffix not in ONE_TO_ONE:
+        return True
+    return (content / compiled.with_suffix(compiled.suffix.removesuffix("_c"))).is_file()
 
 
 def main() -> None:

@@ -7,7 +7,6 @@ import json
 import shlex
 import subprocess
 import sys
-from pathlib import Path
 from typing import Annotated, Any
 
 import typer
@@ -15,7 +14,6 @@ import typer
 from deploy import console
 from deploy.bundle.builder import AddonsBuilder
 from deploy.bundle.packager import AddonPackager
-from deploy.bundle.server_assets import ServerAssets
 from deploy.config.inventory import Inventory
 from deploy.deployer import Deployer
 from deploy.docker.deployer import DockerDeployer
@@ -70,22 +68,6 @@ def package(plugins: PluginsArgument = None) -> None:
     packager.package(AddonsBuilder.HOST)
     for plugin in plugins or Inventory.load().plugins:
         packager.package(plugin)
-
-
-@app.command()
-def assets(
-    plugin: Annotated[str, typer.Argument(help="The plugin whose server-assets to refresh")],
-    addon: Annotated[
-        str | None, typer.Option("--addon", help="Compiled addon folder; default: the plugin name")
-    ] = None,
-    client: Annotated[
-        Path, typer.Option("--client", envvar="CS2_CLIENT_PATH", help="The CS2 client install")
-    ] = Path(r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"),
-) -> None:
-    """Copy the compiled addon files the server needs into plugins/<plugin>/server-assets."""
-    source = client / "game" / "csgo_addons" / (addon or plugin)
-    count = ServerAssets.export(plugin, source)
-    console.done(f"Copied {count} file(s) from {source} into plugins/{plugin}/{ServerAssets.DIR}")
 
 
 @app.command()

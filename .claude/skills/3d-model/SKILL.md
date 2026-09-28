@@ -18,7 +18,7 @@ user approves.
 | Tool | What it does |
 | --- | --- |
 | `scripts/check.py` | Checks the tools outside Blender |
-| `scripts/compile.py` | Compiles one model or particle folder and installs it |
+| `uv run voltmod content compile` | Compiles one model or particle folder and installs it |
 | `scripts/particles.py` | Checks `.vpcf` field names; lists a class's fields and the game's particle textures |
 | `scripts/modelkit/` | The helpers you run inside Blender, below |
 | `examples/jump_pad.py` | A skinned, animated prop. Read it before building one |
@@ -179,13 +179,14 @@ modeldoc.write_vmdl(...)  # only when meshes, animations, groups or attachments 
 Stop the CS2 server and client first; installing into a running game fails.
 
 ```bash
-uv run python .claude/skills/3d-model/scripts/compile.py plugins/<plugin>/addon models/<plugin>/<model> --install client server
+uv run voltmod content compile <plugin> models/<plugin>/<model> --install client --install server
 ```
 
 - `export` refuses `.001` materials and leaves object references stale, so look objects up by
   name afterwards.
-- `compile.py` mirrors the folder into the Workshop Tools content folder, recompiles it from
-  scratch and copies the result to each install target.
+- `voltmod content compile` mirrors the folder from the plugin's `content/` into the Workshop
+  Tools content folder, recompiles it from scratch and copies the result to each install target.
+  `--addon` picks another `csgo_addons` folder than the plugin's name.
 
 ## 9. Wire it into the plugin
 
@@ -207,7 +208,7 @@ images until they say the model is finished or ask to commit.
 
 - **Blender:** `session.remove_scene` for every scene the task made other than the model, then
   `session.purge()`. Leave the user's own scenes alone.
-- **Model folder:** `compile.py --prune` deletes sources nothing names, such as replaced textures.
+- **Model folder:** `voltmod content compile ... --prune` deletes sources nothing names, such as replaced textures.
   Delete stray exports by hand: `anims/`, or a DMX named after a Blender object.
 - **Game folders:** if a model or effect folder was renamed or removed, delete its old copy under
   `content/csgo_addons/<addon>/`, `game/csgo_addons/<addon>/` and `game/csgo/`, on the client and
@@ -228,17 +229,18 @@ End with each exported model's triangle count, and the count before for a model 
 Use a particle effect for sparks, smoke or light that fades. Try glow and animation first: they
 live in the model, while an effect is a separate file the plugin must spawn, precache and remove.
 
-1. **Write** each effect into `<addon>/particles/<plugin>/<effect>/` with `modeldoc.write_vpcf`,
+1. **Write** each effect into `plugins/<plugin>/content/particles/<plugin>/<effect>/` with `modeldoc.write_vpcf`,
    built from `modeldoc.op(...)` operators. A team variant is its own file; a part several effects
    share is a child.
 2. **Check the field names.** `resourcecompiler` silently drops fields it doesn't know, so a typo
    compiles into an effect without that setting. `particles.py fields <class>` prints the real
    names: `C_INIT_RandomLifeTime` takes `m_fLifetimeMin`, not `m_flLifetimeMin`.
-3. **Compile and install.** `compile.py` runs `particles.py check` first and stops on an unknown
-   field:
+3. **Check, then compile and install.** Fix every field `particles.py check` reports before
+   compiling:
 
    ```bash
-   uv run python .claude/skills/3d-model/scripts/compile.py plugins/<plugin>/addon particles/<plugin>/<effect> --install client server
+   uv run python .claude/skills/3d-model/scripts/particles.py check plugins/<plugin>/content/particles/<plugin>/<effect>/*.vpcf
+   uv run voltmod content compile <plugin> particles/<plugin>/<effect> --install client --install server
    ```
 
 4. **Review.** Nothing renders particles outside the game, so the user checks them in game or in
@@ -253,7 +255,7 @@ live in the model, while an effect is a separate file the plugin must spawn, pre
   glow), `beam_hotwhite.vtex` (streaks) or `sparks/sparks.vtex`. `particles.py textures <word>`
   lists them.
 - **Schema dump:** the field checks read `references/swiftlys2`, which is local only. Without it,
-  `compile.py` says so and compiles unchecked.
+  `particles.py check` stops with `no schema dump`; compile unchecked then.
 - **On an existing model:** measure the point in Blender, from the `.blend` or
   `session.import_dmx`, and spawn the effect at the prop's origin plus that offset, turned by its
   yaw (Stronghold's `OffsetByYaw`). The effect won't follow a moving part; animate a glowing part

@@ -2,7 +2,6 @@
 
 ```bash
 uv run poe deploy package                             # stage host and plugins in build/package/
-uv run poe deploy assets <plugin>                     # refresh a plugin's server-assets/
 uv run poe deploy push [--server ID] [--dry-run]      # install plugins and settings, restart
 uv run poe deploy restart [--server ID] [--dry-run]   # restart so CS2 updates
 uv run poe rcon "volt list" [--server ID] [--instance NAME]
@@ -157,15 +156,13 @@ A plugin's `server-assets/` holds the compiled workshop files its server code to
 (`.vmdl_c`: collision, hitboxes, attachments), particles (`.vpcf_c`), sound events (`.vsndevts_c`)
 and entity subclasses (`.vdata_c`). It installs with the plugin, and the host mounts it ahead of
 the game's own VPKs, so an override such as `scripts/weapons.vdata_c` takes effect. Clients still
-download the whole addon. After recompiling the addon in the Workshop Tools, refresh the folder and
-commit it:
+download the whole addon. After recompiling the addon, refresh the folder and commit it:
 
 ```bash
-uv run poe deploy assets stronghold    # from game/csgo_addons/stronghold; --addon for another name
+uv run voltmod content server-assets stronghold    # --addon for another csgo_addons folder
 ```
 
-It reads the client install from `--client` or `CS2_CLIENT_PATH`, defaulting to Steam's usual
-path. A deploy only adds and overwrites these files; one the plugin dropped stays on the server.
+It reads the client install from `--client` or `CS2_CLIENT_PATH`. A deploy only adds and overwrites these files; one the plugin dropped stays on the server.
 
 The engine finds the loader because the deploy adds `Game csgo/addons/voltmod` directly above
 `Game csgo` in `gameinfo.gi`. The loader starts the host, which reads each
