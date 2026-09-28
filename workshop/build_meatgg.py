@@ -33,8 +33,10 @@ def main() -> None:
 
     # A compiled file whose source left the repo stays out of the addon.
     content = Path(__file__).parents[1] / "plugins" / "stronghold" / "content"
+
     def stale(folder: str, names: list[str]) -> list[str]:
-        return [name for name in names if not has_source(content, (Path(folder) / name).relative_to(stronghold))]
+        relative = Path(folder).relative_to(stronghold)
+        return [name for name in names if not has_source(content, relative / name)]
 
     for folder in STRONGHOLD_CONTENT:
         shutil.copytree(stronghold / folder, meatgg / folder, ignore=stale)
