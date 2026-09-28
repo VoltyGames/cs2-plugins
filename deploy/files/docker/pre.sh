@@ -4,7 +4,6 @@ set -euo pipefail
 Root="/home/steam/cs2-dedicated"
 Csgo="$Root/game/csgo"
 AddonsSrc="/home/steam/plugin-bundles/addons"
-AssetsSrc="/home/steam/plugin-bundles/assets"
 
 if [[ ! -d "$Csgo" ]]; then
     echo "CS2 game directory is not present yet: $Csgo" >&2
@@ -14,11 +13,6 @@ fi
 if [[ -d "$AddonsSrc" ]]; then
     mkdir -p "$Csgo/addons"
     cp -a "$AddonsSrc/." "$Csgo/addons/"
-fi
-
-# Compiled workshop files the plugins' server code needs; clients download the whole addon.
-if [[ -d "$AssetsSrc" ]]; then
-    cp -a "$AssetsSrc/." "$Csgo/"
 fi
 
 # The engine starts the host through this loader; without it nothing the deploy shipped loads.

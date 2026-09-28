@@ -150,13 +150,15 @@ addons/
       plugin.json                  name, version and dependencies
       <plugin>.so                  the plugin module
       configs/settings.jsonc       rendered per instance
+      server-assets/               compiled workshop files the server loads, when the plugin has any
 ```
 
-A plugin with a `server-assets/` folder also ships it into `game/csgo`, beside `addons/`. The
-server mounts no workshop addon, so the compiled files its code touches go there loose: models
-(`.vmdl_c`: collision, hitboxes, attachments), particles (`.vpcf_c`) and sound events
-(`.vsndevts_c`). Clients still download the whole addon. After recompiling the addon in the
-Workshop Tools, refresh the folder and commit it:
+A plugin's `server-assets/` holds the compiled workshop files its server code touches: models
+(`.vmdl_c`: collision, hitboxes, attachments), particles (`.vpcf_c`), sound events (`.vsndevts_c`)
+and entity subclasses (`.vdata_c`). It installs with the plugin, and the host mounts it ahead of
+the game's own VPKs, so an override such as `scripts/weapons.vdata_c` takes effect. Clients still
+download the whole addon. After recompiling the addon in the Workshop Tools, refresh the folder and
+commit it:
 
 ```bash
 uv run poe deploy assets stronghold    # from game/csgo_addons/stronghold; --addon for another name

@@ -2,7 +2,6 @@ import json
 import shutil
 from pathlib import Path
 
-from deploy.bundle.server_assets import ServerAssets
 from deploy.bundle.settings import SettingsRenderer
 from deploy.config.inventory import Inventory
 from deploy.config.secrets import ServerSecrets
@@ -21,24 +20,16 @@ class AddonsBuilder:
     PLUGINS_DIR = f"{HOST_ADDON_DIR}/plugins"
     # The module the engine loads through gameinfo.gi; it starts the host.
     LOADER = f"{HOST_ADDON_DIR}/bin/linuxsteamrt64/libserver_valve.so"
-    # Beside addons/; its contents go into game/csgo.
-    ASSETS = "assets"
 
     def __init__(self, inventory: Inventory, server: Server, secrets: ServerSecrets) -> None:
         self._server = server
         self._settings = SettingsRenderer(inventory, server, secrets)
 
     def build(self, instance: Instance, destination: Path) -> Path:
-        """Rebuild destination/addons with the host and the instance's plugins, and return it.
-
-        destination/assets gets the plugins' server assets.
-        """
+        """Rebuild destination/addons with the host and the instance's plugins, and return it."""
         addons = destination / "addons"
-        assets = destination / self.ASSETS
         shutil.rmtree(addons, ignore_errors=True)
-        shutil.rmtree(assets, ignore_errors=True)
         addons.mkdir(parents=True)
-        assets.mkdir()
         # The host is in every payload: it loads only plugins built against its own ABI.
         self._unpack(self.HOST, addons)
         if not (addons / self.LOADER).is_file():
@@ -49,8 +40,6 @@ class AddonsBuilder:
         for plugin in self._server.plugins_for(instance):
             self._unpack(plugin, addons)
             self._write_configs(instance, plugin, addons)
-            if ServerAssets.folder(plugin).is_dir():
-                shutil.copytree(ServerAssets.folder(plugin), assets, dirs_exist_ok=True)
         return addons
 
     def _write_configs(self, instance: Instance, plugin: str, addons: Path) -> None:

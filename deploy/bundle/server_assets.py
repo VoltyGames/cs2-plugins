@@ -8,13 +8,15 @@ from deploy.paths import ROOT
 class ServerAssets:
     """The compiled workshop files a plugin's server code needs, in plugins/<name>/server-assets.
 
-    The server mounts no workshop addon, so these ship loose into game/csgo. Textures, materials and
-    sound files only render or play on clients, which download the whole addon.
+    The folder installs with the plugin, and the VoltMod host mounts it ahead of the game's VPKs.
+    Textures, materials and sound files only render or play on clients, which download the whole
+    addon.
     """
 
     DIR = "server-assets"
-    # Models hold collision, hitboxes and attachments; particles and sound events spawn by name.
-    KEEP = (".vmdl_c", ".vpcf_c", ".vsndevts_c")
+    # Models hold collision, hitboxes and attachments; particles and sound events spawn by name;
+    # vdata overrides entity subclasses, such as the launchers' weapons.
+    KEEP = (".vmdl_c", ".vpcf_c", ".vsndevts_c", ".vdata_c")
 
     @classmethod
     def folder(cls, plugin: str) -> Path:

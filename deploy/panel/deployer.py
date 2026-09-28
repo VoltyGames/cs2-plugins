@@ -65,14 +65,11 @@ class PanelDeployer(Deployer[PanelServer]):
         yield self.server.host, instance.port
 
     def _plugin_archive(self, instance: Instance) -> bytes:
-        """The addons tree plus the server assets, both unpacked into game/csgo."""
-        render_dir = RENDER_DIR / self.server.id
-        addons = self.addons.build(instance, render_dir)
+        """The addons tree, unpacked into game/csgo."""
+        addons = self.addons.build(instance, RENDER_DIR / self.server.id)
         buffer = io.BytesIO()
         with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
             tar.add(addons, arcname="addons")
-            for entry in sorted((render_dir / AddonsBuilder.ASSETS).iterdir()):
-                tar.add(entry, arcname=entry.name)
         return buffer.getvalue()
 
     def _remove_unused_plugins(self, instance: Instance) -> None:
