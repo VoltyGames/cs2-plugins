@@ -54,7 +54,7 @@ WeaponActionResult GiveWeapon(App& app, VoltMod::PlayerRef admin, VoltMod::Playe
 {
     const std::string classname(item);
     return RunWeaponAction(
-        app, admin, target, [&classname](const ActionContext& ctx) { return ctx.Target().Pawn().GiveItem(classname); },
+        app, admin, target, [&classname](const ActionContext& ctx) { return static_cast<bool>(ctx.Target().Pawn().GiveItem(classname)); },
         "broadcast.gaveWeapon");
 }
 
