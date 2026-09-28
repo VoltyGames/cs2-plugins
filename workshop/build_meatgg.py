@@ -3,34 +3,30 @@ import shutil
 import subprocess
 from pathlib import Path
 
-DEFAULT_CLIENT = r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"
+from voltmod.content.content import has_source
+from voltmod.panorama.compiler import PANORAMA_DIRS
+from voltmod.project import Project
+from voltmod.steam import find_client
+from voltmod.workshop_tools import AddonDirs
+
 STRONGHOLD_CONTENT = ("models", "materials", "particles", "scripts", "soundevents", "sounds")
-PANORAMA_OUTPUT = ("layout/custom_game", "styles/custom_game", "images/custom_game")
 SCREENS = ("main-menu", "admin-system", "stronghold")
-# Compiled one to one from a source file; textures and sounds get generated names.
-ONE_TO_ONE = (".vmdl_c", ".vpcf_c", ".vsndevts_c", ".vdata_c", ".vmat_c")
-
-
-def has_source(content: Path, compiled: Path) -> bool:
-    """Whether `compiled` (relative, e.g. models/x/x.vmdl_c) still has its source in `content`."""
-    if compiled.suffix not in ONE_TO_ONE:
-        return True
-    return (content / compiled.with_suffix(compiled.suffix.removesuffix("_c"))).is_file()
 
 
 def main() -> None:
     """Rebuild the meatgg addon: every screen, Stronghold's content and this folder's meatgg/."""
-    client = Path(os.environ.get("CS2_CLIENT_PATH", DEFAULT_CLIENT))
-    sources = client / "content" / "csgo_addons" / "meatgg"
-    meatgg = client / "game" / "csgo_addons" / "meatgg"
-    stronghold = client / "game" / "csgo_addons" / "stronghold"
+    project = Project.load()
+    client = find_client(Path(path) if (path := os.environ.get("CS2_CLIENT_PATH")) else None)
+    dirs = AddonDirs.of(client, "meatgg")
+    sources, meatgg = dirs.sources, dirs.compiled
+    stronghold = AddonDirs.of(client, "stronghold").compiled
 
     if not stronghold.is_dir():
         raise SystemExit(f"no compiled stronghold addon at {stronghold}")
 
     # Nothing else deletes from the addon, so a renamed or removed file would keep shipping.
     for addon in (sources, meatgg):
-        for folder in PANORAMA_OUTPUT:
+        for folder in PANORAMA_DIRS:
             shutil.rmtree(addon / "panorama" / folder, ignore_errors=True)
     for folder in STRONGHOLD_CONTENT:
         shutil.rmtree(meatgg / folder, ignore_errors=True)
@@ -39,7 +35,7 @@ def main() -> None:
     subprocess.run(["voltmod", *compile_screens], check=True)
 
     # A compiled file whose source left the repo stays out of the addon.
-    content = Path(__file__).parents[1] / "plugins" / "stronghold" / "content"
+    content = project.plugin("stronghold").content_dir
 
     def stale(folder: str, names: list[str]) -> list[str]:
         relative = Path(folder).relative_to(stronghold)
