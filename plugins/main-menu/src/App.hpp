@@ -30,6 +30,7 @@ struct App final : VoltMod::Plugin
                                        MainMenuLayout::Rows.size(), MainMenuLayout::IconSetNames};
     /** Menus on the layout while `menu.panorama` is on; declared after it so it releases first. */
     VoltMod::Subscription Panorama;
+    VoltMod::Subscription Addon;
     /** The home page's report button; the layout does not own that id. */
     VoltMod::Subscription ReportButton;
 };

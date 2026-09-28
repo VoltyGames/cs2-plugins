@@ -76,6 +76,7 @@ struct App final : VoltMod::Plugin
                                            AdminMenuLayout::Rows.size(), AdminMenuLayout::IconSetNames};
     /** Declared after the layout, so it releases first. */
     VoltMod::Subscription Panorama;
+    VoltMod::Subscription Addon;
 
     Config::ConfigManager Settings = VoltMod::LoadConfig<Config::ConfigManager>(Runtime);
     /** Runs actions through Runtime::Policy (permissions, targeting) and announces them. */

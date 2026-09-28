@@ -33,6 +33,8 @@ struct TabSettings
 struct Settings
 {
     VoltMod::StandardPluginSettings plugin;
+    /** The workshop addon every connecting client must download; 0 requires none. */
+    uint64_t addonId = 0;
     VoltMod::PanoramaMenuSettings menu{.panorama = true};
     std::vector<TabSettings> tabs;
 };
@@ -63,6 +65,7 @@ struct Tab
 struct Hub
 {
     VoltMod::StandardPluginSettings plugin;
+    uint64_t addonId = 0;
     VoltMod::PanoramaMenuSettings menu;
     std::vector<Tab> tabs;
 };

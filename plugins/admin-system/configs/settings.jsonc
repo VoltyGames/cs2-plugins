@@ -183,12 +183,11 @@
       "durationSec": 20
     }
   },
+  // The workshop addon every connecting client must download (the admin menu layout among it); 0 requires none.
+  "addonId": 0,
   "menu": {
-    // Use Panorama instead of center HTML. `uv run poe panorama` installs admin_menu locally;
-    // `addonId` distributes it to other clients.
-    "panorama": false,
-    // Workshop addon required for connecting clients; use 0 with a locally installed layout.
-    "addonId": 0
+    // Use Panorama instead of center HTML. `uv run poe panorama` installs admin_menu locally.
+    "panorama": false
   },
   "weapons": {
     // Offered by Player Actions > Give weapon. `item` is an entity classname; non-`weapon_` values are skipped.

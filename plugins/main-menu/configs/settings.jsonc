@@ -3,11 +3,11 @@
     // Default language; a player's own pick wins.
     "locale": "ru"
   },
+  // The workshop addon every connecting client must download (the menu layout among it); 0 requires none.
+  "addonId": 0,
   "menu": {
     // Players without the addon get center HTML.
-    "panorama": true,
-    // meatgg_ui, shared with admin-system.
-    "addonId": 0
+    "panorama": true
   },
   // Up to 7 tabs, then Settings. A tab with nothing to show is hidden.
   //   command  runs a console command as the player

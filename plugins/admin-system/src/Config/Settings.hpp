@@ -30,6 +30,8 @@ struct Settings
     ReportSettings reports;
     CheatCheckSettings cheatCheck;
     MapSettings maps;
+    /** The workshop addon every connecting client must download; 0 requires none. */
+    uint64_t addonId = 0;
     VoltMod::PanoramaMenuSettings menu;
     WeaponSettings weapons;
 };

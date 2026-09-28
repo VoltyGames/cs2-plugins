@@ -85,7 +85,7 @@ Hub CleanSettings(Settings raw)
         raw.tabs.resize(static_cast<std::size_t>(MaxTabs));
     }
 
-    Hub hub{.plugin = std::move(raw.plugin), .menu = raw.menu};
+    Hub hub{.plugin = std::move(raw.plugin), .addonId = raw.addonId, .menu = raw.menu};
     for (TabSettings& tab : raw.tabs)
     {
         Validation::FilterValid(

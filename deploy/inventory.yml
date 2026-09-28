@@ -10,7 +10,8 @@ plugins:
     settings:
       plugin: { locale: ru }
       server: { tag: "${SERVER_TAG}", name: "${SERVER_NAME}" }
-      menu: { panorama: true, addonId: 3808651114 }
+      addonId: 3808651114
+      menu: { panorama: true }
       punishments:
         templates:
           - { name: "Читы", type: ban, duration: perm, reason: "Читы" }
@@ -41,7 +42,7 @@ plugins:
   anticheat: {}
   main-menu:
     settings:
-      menu: { addonId: 3808651114 }
+      addonId: 3808651114
   stronghold:
     settings:
       plugin: { locale: ru }

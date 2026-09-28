@@ -265,10 +265,11 @@ bool App::Load()
     Admin::Menu::VerifyCatalog(*this);
     InstallPolicy();
     RegisterPlayerLifecycle();
-    if (const auto& menu = Settings.Get().menu; menu.panorama)
+    Addon = Runtime.AddonManager.Add(Settings.Get().addonId);
+    if (Settings.Get().menu.panorama)
     {
         AddHomePageText();
-        Panorama = Runtime.UsePanorama(MenuLayout, menu.addonId);
+        Panorama = Runtime.UsePanorama(MenuLayout);
     }
 
     // No database: skip the steps that need it.
