@@ -24,14 +24,17 @@ plugins/hello-world/
   plugin.json           name, version, logTag, description, author, dependencies
   README.md             what the plugin does, its commands and settings
   configs/
-    settings.jsonc
+    settings.jsonc      addonId 0, menu.panorama false
   translations/
     en.json
   src/
-    App.cpp             App::Load
+    App.cpp             App::Load: requires the addon, draws menus on the layout, registers commands
     App.hpp             HelloWorld::App: everything the plugin owns for one load cycle
     Commands.cpp        the !ping command
     Config.hpp          the settings struct
+  panorama/screens/
+    hello_world_menu.xml.j2, .css.j2   the menu layout; the build renders Ui/HelloWorldMenu.hpp
+  content/              workshop sources (models, particles, sounds) for the CS2 Workshop Tools
 ```
 
 `plugin.json` is the plugin's identity. `name` must equal the directory and the CMake target, CMake
