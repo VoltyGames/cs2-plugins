@@ -273,11 +273,11 @@ bool App::Load()
     }
 
     // No database: skip the steps that need it.
-    auto& steps = Runtime.LoadSteps;
-    const bool database = steps.Optional("Database", [this] { return ConnectDatabase(); });
+    auto& report = Runtime.LoadReport;
+    const bool database = report.Optional("Database", ConnectDatabase());
     if (database)
     {
-        steps.Optional("Admins", [this] { return LoadAdminData(); });
+        report.Optional("Admins", LoadAdminData());
     }
 
     RegisterCommands();
@@ -286,7 +286,7 @@ bool App::Load()
 
     if (database)
     {
-        steps.Optional("Punishments", [this] { return InitializePunishments(); });
+        report.Optional("Punishments", InitializePunishments());
     }
 
     RegisterGameEventListeners();
