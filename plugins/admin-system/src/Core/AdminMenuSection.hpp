@@ -1,9 +1,11 @@
 #pragma once
 
-#include "Core/Types.hpp"
+#include "Admin/AdminManager.hpp"
 
 #include <Contracts/IMenuSection.hpp>
+#include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Signals/Subscription.hpp>
+#include <functional>
 
 namespace AdminSystem::Core
 {
@@ -12,7 +14,10 @@ namespace AdminSystem::Core
 class AdminMenuSection final : public Contracts::IMenuSection
 {
 public:
-    explicit AdminMenuSection(App& app) : _app(app) {}
+    /** @p openMenu opens the admin menu, which reaches the whole App; false when it could not be built. */
+    AdminMenuSection(VoltMod::Runtime& runtime, Admin::AdminManager& admins, std::function<bool(int)> openMenu)
+        : _runtime(runtime), _admins(admins), _openMenu(std::move(openMenu))
+    {}
 
     /** Offer this to other plugins until this is destroyed. */
     void Publish();
@@ -21,7 +26,9 @@ public:
     bool Open(int slot) override;
 
 private:
-    App& _app;
+    VoltMod::Runtime& _runtime;
+    Admin::AdminManager& _admins;
+    std::function<bool(int)> _openMenu;
     /** Declared last, so the entry is withdrawn before anything it reaches. */
     VoltMod::Subscription _published;
 };

@@ -36,7 +36,7 @@ void RegisterReportCommand(VoltMod::CommandManager& commands, App& app)
                 break;
             }
 
-            AdminSystem::Reports::OpenReportMenu(app, c.Slot);
+            app.ReportMenu.Open(c.Slot);
             return Reply::Silent();
         });
 }

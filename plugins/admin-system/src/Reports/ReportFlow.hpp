@@ -1,8 +1,10 @@
 #pragma once
 
-#include "App.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Reports/ReportManager.hpp"
 
 #include <VoltMod/Api.hpp>
+#include <optional>
 #include <string>
 
 namespace AdminSystem::Reports
@@ -21,7 +23,25 @@ struct PendingReport
     std::string ReasonText;
 };
 
-/** Open the report player picker for @p reporterSlot - the `!report` entry point. */
-void OpenReportMenu(AdminSystem::App& app, int reporterSlot);
+/** The `!report` menus: player picker, reason, confirm. */
+class ReportFlow
+{
+public:
+    ReportFlow(VoltMod::Runtime& runtime, const Config::ConfigManager& settings, ReportManager& reports)
+        : _runtime(runtime), _settings(settings), _reports(reports)
+    {}
+
+    /** Open the report player picker for @p reporterSlot. */
+    void Open(int reporterSlot);
+
+private:
+    void Start(int reporterSlot, VoltMod::PlayerRef targetRef);
+    std::optional<std::string> Validate(int slot, const PendingReport& pending);
+    void Submit(int reporterSlot, PendingReport& pending);
+
+    VoltMod::Runtime& _runtime;
+    const Config::ConfigManager& _settings;
+    ReportManager& _reports;
+};
 
 }  // namespace AdminSystem::Reports

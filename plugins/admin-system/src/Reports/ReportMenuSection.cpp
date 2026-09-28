@@ -1,6 +1,5 @@
 #include "Reports/ReportMenuSection.hpp"
 
-#include "App.hpp"
 #include "Reports/ReportFlow.hpp"
 #include "Reports/ReportManager.hpp"
 
@@ -12,27 +11,27 @@ namespace AdminSystem::Reports
 
 void ReportMenuSection::Publish()
 {
-    _published = _app.Runtime.Exchange.Publish<Contracts::IMenuSection>(this, "report");
+    _published = _runtime.Exchange.Publish<Contracts::IMenuSection>(this, "report");
 }
 
 bool ReportMenuSection::IsVisibleTo(int slot)
 {
-    return _app.Runtime.Players.Get(slot) && _app.Settings.Get().reports.enabled;
+    return _runtime.Players.Get(slot) && _settings.Get().reports.enabled;
 }
 
 bool ReportMenuSection::Open(int slot)
 {
-    const VoltMod::Player* player = _app.Runtime.Players.Get(slot);
+    const VoltMod::Player* player = _runtime.Players.Get(slot);
     if (!player)
     {
         return false;
     }
 
     // The same gate as `!report`, so the menu entry and the command refuse alike.
-    const ReportGate gate = _app.Reports.CanReport(player->SteamId());
+    const ReportGate gate = _reports.CanReport(player->SteamId());
     if (gate.Reason == ReportDenial::OnCooldown)
     {
-        _app.Runtime.Messages.SendKey(slot, "report.cooldown", {{"seconds", std::to_string(gate.SecondsLeft)}});
+        _runtime.Messages.SendKey(slot, "report.cooldown", {{"seconds", std::to_string(gate.SecondsLeft)}});
         return true;
     }
     if (!gate)
@@ -40,7 +39,7 @@ bool ReportMenuSection::Open(int slot)
         return false;
     }
 
-    OpenReportMenu(_app, slot);
+    _flow.Open(slot);
     return true;
 }
 

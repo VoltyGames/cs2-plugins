@@ -1,8 +1,11 @@
 #pragma once
 
-#include "Core/Types.hpp"
+#include "Config/ConfigManager.hpp"
+#include "Reports/ReportFlow.hpp"
+#include "Reports/ReportManager.hpp"
 
 #include <Contracts/IMenuSection.hpp>
+#include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Signals/Subscription.hpp>
 
 namespace AdminSystem::Reports
@@ -12,7 +15,10 @@ namespace AdminSystem::Reports
 class ReportMenuSection final : public Contracts::IMenuSection
 {
 public:
-    explicit ReportMenuSection(App& app) : _app(app) {}
+    ReportMenuSection(VoltMod::Runtime& runtime, const Config::ConfigManager& settings, ReportManager& reports,
+                      ReportFlow& flow)
+        : _runtime(runtime), _settings(settings), _reports(reports), _flow(flow)
+    {}
 
     /** Offer this to other plugins until this is destroyed. */
     void Publish();
@@ -21,7 +27,10 @@ public:
     bool Open(int slot) override;
 
 private:
-    App& _app;
+    VoltMod::Runtime& _runtime;
+    const Config::ConfigManager& _settings;
+    ReportManager& _reports;
+    ReportFlow& _flow;
     /** Declared last, so the entry is withdrawn before anything it reaches. */
     VoltMod::Subscription _published;
 };

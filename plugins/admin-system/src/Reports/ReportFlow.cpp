@@ -1,6 +1,5 @@
 #include "Reports/ReportFlow.hpp"
 
-#include "App.hpp"
 #include "Config/ReportSettings.hpp"
 #include "Reports/ReportManager.hpp"
 
@@ -34,28 +33,28 @@ static const std::string CustomReasonCode = "other";
 
 /** `report.reasons.<code>` when the translation files define it, else the config label - so
  *  operator-added codes need no translation entry. */
-static std::string ReasonLabel(App& app, const Config::ReportReason& reason, int slot)
+static std::string ReasonLabel(VoltMod::Runtime& runtime, const Config::ReportReason& reason, int slot)
 {
-    return app.Runtime.Translations.GetOr("report.reasons." + reason.code, slot, reason.label);
+    return runtime.Translations.GetOr("report.reasons." + reason.code, slot, reason.label);
 }
 
 /** Re-runs before every step and at confirm: the target may have left and the gate may have closed
  *  while the menu sat open. Flow renders these keys without token substitution, so keep them
  *  token-free. */
-static std::optional<std::string> ValidatePending(App& app, int slot, const PendingReport& pending)
+std::optional<std::string> ReportFlow::Validate(int slot, const PendingReport& pending)
 {
-    auto* reporter = app.Runtime.Players.Get(slot);
+    auto* reporter = _runtime.Players.Get(slot);
     if (!reporter)
     {
         return "report.failed";
     }
 
-    if (!app.Runtime.Players.Get(pending.Target))
+    if (!_runtime.Players.Get(pending.Target))
     {
         return "report.targetLost";
     }
 
-    if (!app.Reports.CanReport(reporter->SteamId(), pending.Target.SteamId))
+    if (!_reports.CanReport(reporter->SteamId(), pending.Target.SteamId))
     {
         return "report.blocked";
     }
@@ -63,49 +62,49 @@ static std::optional<std::string> ValidatePending(App& app, int slot, const Pend
     return std::nullopt;
 }
 
-static void Submit(App& app, int reporterSlot, PendingReport& pending)
+void ReportFlow::Submit(int reporterSlot, PendingReport& pending)
 {
-    auto* reporter = app.Runtime.Players.Get(reporterSlot);
-    auto* target = app.Runtime.Players.Get(pending.Target);
+    auto* reporter = _runtime.Players.Get(reporterSlot);
+    auto* target = _runtime.Players.Get(pending.Target);
     if (!reporter || !target)
     {
         return;
     }
 
     const int64_t reporterSteamId = reporter->SteamId();
-    app.Reports.Submit(*reporter, *target, pending.ReasonCode, pending.ReasonText,
-                       // The reporter may be gone by the time the write lands, and their old slot
-                       // may host somebody else - re-find them by SteamID.
-                       [&app, reporterSteamId, name = target->Name()](bool ok) {
-                           auto* player = app.Runtime.Players.BySteamId(reporterSteamId);
-                           if (!player)
-                           {
-                               return;
-                           }
-                           app.Runtime.Messages.SendKey(player->Slot(), ok ? "report.submitted" : "report.failed",
-                                                        {{"name", name}});
-                       });
+    _reports.Submit(*reporter, *target, pending.ReasonCode, pending.ReasonText,
+                    // The reporter may be gone by the time the write lands, and their old slot
+                    // may host somebody else - re-find them by SteamID.
+                    [&runtime = _runtime, reporterSteamId, name = target->Name()](bool ok) {
+                        auto* player = runtime.Players.BySteamId(reporterSteamId);
+                        if (!player)
+                        {
+                            return;
+                        }
+                        runtime.Messages.SendKey(player->Slot(), ok ? "report.submitted" : "report.failed",
+                                                 {{"name", name}});
+                    });
 }
 
-static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targetRef)
+void ReportFlow::Start(int reporterSlot, VoltMod::PlayerRef targetRef)
 {
-    auto* target = app.Runtime.Players.Get(targetRef);
+    auto* target = _runtime.Players.Get(targetRef);
     if (!target)
     {
         return;
     }
 
-    auto& translations = app.Runtime.Translations;
+    auto& translations = _runtime.Translations;
 
     // The flow runs for one reporter, so every step string resolves in their language here.
     std::vector<Labeled<std::string>> reasons;
-    for (const auto& reason : app.Settings.Get().reports.reasons)
+    for (const auto& reason : _settings.Get().reports.reasons)
     {
-        reasons.push_back({.Label = ReasonLabel(app, reason, reporterSlot), .Value = reason.code});
+        reasons.push_back({.Label = ReasonLabel(_runtime, reason, reporterSlot), .Value = reason.code});
     }
 
-    ReportFlowT::Create(app.Runtime.Menus, reporterSlot, PendingReport{.Target = targetRef})
-        ->Validate([&app, reporterSlot](const PendingReport& p) { return ValidatePending(app, reporterSlot, p); })
+    ReportFlowT::Create(_runtime.Menus, reporterSlot, PendingReport{.Target = targetRef})
+        ->Validate([this, reporterSlot](const PendingReport& p) { return Validate(reporterSlot, p); })
         ->AddOptionsStep({.Title = translations.Get("report.selectReason", reporterSlot),
                           .Options = std::move(reasons),
                           .Set =
@@ -113,16 +112,16 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
                                   p.ReasonText = label;
                                   p.ReasonCode = code;
                               },
-                          .CustomLabel = app.Settings.Get().reports.allowCustomReason
+                          .CustomLabel = _settings.Get().reports.allowCustomReason
                                              ? translations.Get("report.customReason", reporterSlot)
                                              : std::string(),
                           .CustomPrompt = translations.Get("report.customReasonPrompt", reporterSlot),
                           .CustomValue = CustomReasonCode})
         ->Confirm({.Title = translations.Get("report.confirmTitle", reporterSlot),
                    .Summary =
-                       [&app, reporterSlot](const PendingReport& pending, VoltMod::SummaryRows& rows) {
-                           auto& translations = app.Runtime.Translations;
-                           auto* targetPlayer = app.Runtime.Players.Get(pending.Target);
+                       [this, reporterSlot](const PendingReport& pending, VoltMod::SummaryRows& rows) {
+                           auto& translations = _runtime.Translations;
+                           auto* targetPlayer = _runtime.Players.Get(pending.Target);
                            rows.Add(translations.Get("report.target", reporterSlot),
                                     targetPlayer ? targetPlayer->Name() : std::string())
                                .Add(translations.Get("report.reason", reporterSlot),
@@ -131,34 +130,34 @@ static void StartReportFlow(App& app, int reporterSlot, VoltMod::PlayerRef targe
                    // Its own wording rather than the framework's "Confirm".
                    .ConfirmLabel = translations.Get("report.confirm", reporterSlot),
                    .CancelLabel = translations.Get("report.cancel", reporterSlot)})
-        ->Finish([&app, reporterSlot](PendingReport& p) { Submit(app, reporterSlot, p); })
+        ->Finish([this, reporterSlot](PendingReport& p) { Submit(reporterSlot, p); })
         ->Begin();
 }
 
-void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
+void ReportFlow::Open(int reporterSlot)
 {
-    auto* reporter = app.Runtime.Players.Get(reporterSlot);
+    auto* reporter = _runtime.Players.Get(reporterSlot);
     if (!reporter)
     {
         return;
     }
 
-    auto& translations = app.Runtime.Translations;
+    auto& translations = _runtime.Translations;
     VoltMod::MenuBuilder builder(translations.Get("report.selectTarget", reporterSlot));
 
     // Only reportable players are listed: a greyed-out row gives no reason when pressed.
     int listed = 0;
-    for (auto* target : app.Runtime.Players.All())
+    for (auto* target : _runtime.Players.All())
     {
-        if (target->Slot() == reporterSlot || target->IsBot() ||
-            !app.Reports.CanReport(reporter->SteamId(), target->SteamId()))
+        const bool otherHuman = target->Slot() != reporterSlot && !target->IsBot();
+        if (!otherHuman || !_reports.CanReport(reporter->SteamId(), target->SteamId()))
         {
             continue;
         }
 
         builder.Add(VoltMod::ButtonRow{
             .Label = target->Name(),
-            .Activate = [&app, reporterSlot, ref = target->Ref()](int) { StartReportFlow(app, reporterSlot, ref); }});
+            .Activate = [this, reporterSlot, ref = target->Ref()](int) { Start(reporterSlot, ref); }});
         ++listed;
     }
 
@@ -167,7 +166,7 @@ void OpenReportMenu(AdminSystem::App& app, int reporterSlot)
         builder.Text(translations.Get("common.noPlayers", reporterSlot));
     }
 
-    app.Runtime.Menus.OpenSession(reporterSlot, builder.Build(), {});
+    _runtime.Menus.OpenSession(reporterSlot, builder.Build(), {});
 }
 
 }  // namespace AdminSystem::Reports

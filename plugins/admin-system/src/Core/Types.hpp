@@ -3,7 +3,7 @@
 namespace AdminSystem
 {
 
-/** App holds members that keep an App& (ActionDescriptors, the menu sections), so their headers
+/** App.hpp includes Admin/Actions/Descriptors.hpp, whose free functions take an App&, so that header
  *  cannot include App.hpp. */
 struct App;
 

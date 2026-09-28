@@ -31,7 +31,8 @@ paths:
 
 - Constructor injection. No singletons, ambient lookups, or generic Services/Env bags.
 - Stable services bind in constructors; per-request data (slots, descriptors) goes to methods.
-- A plugin class that needs more than five of the App's members besides `Runtime` takes `App&` (declared in the plugin's `*Types.hpp`, with `App.hpp` included by its .cpp). Its constructor stores it and subscribes, and touches no other member: those below it are not built yet. Every other class keeps explicit references, and pure logic takes plain values.
+- A plugin class takes a reference to each App member it uses, in the App's declaration order, and is declared in the App below all of them. Pure logic takes plain values.
+- `App&` is only for load-time wiring (`RegisterCommands(App&)`) and admin-system's menu code, whose screens open through the whole App (`OpenAdminMenu`, `OpenReportMenu(app, slot)`); it declares `App` in `Core/Types.hpp`.
 - `ActionContext` carries only the resolved pair (`ctx.Target().Pawn()` for the body), never `Runtime&`. A body that needs a service uses the `App&` it captured, or a small per-descriptor factory when built as static data (see `Admin/Effects/*.cpp`).
 
 ## Tests

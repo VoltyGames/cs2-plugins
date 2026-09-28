@@ -21,6 +21,7 @@
 #include "Maps/MapCycleState.hpp"
 #include "Maps/VoteState.hpp"
 #include "Punishments/PunishmentManager.hpp"
+#include "Reports/ReportFlow.hpp"
 #include "Reports/ReportManager.hpp"
 #include "Reports/ReportMenuSection.hpp"
 
@@ -95,6 +96,7 @@ struct App final : VoltMod::Plugin
     Punishments::PunishmentManager Punishments{Repos, Settings, Runtime, Chat};
     Core::PlayerChat PlayerChat{Runtime, Settings, Chat, Admins, Punishments};
     Reports::ReportManager Reports{Repos, Settings, Runtime};
+    Reports::ReportFlow ReportMenu{Runtime, Settings, Reports};
     Admin::Effects::EffectManager Effects{Runtime.Scheduler};
     /** Runs effects through Actions. */
     Admin::Effects::EffectDispatcher PlayerEffects{Actions, Effects};
@@ -103,8 +105,8 @@ struct App final : VoltMod::Plugin
     /** Published in Load; each withdraws itself before what it wraps dies. */
     Core::AdminActionsService AdminActions{Runtime, Punishments, Access};
     Core::PermissionService SharedPermissions{Runtime, Access};
-    Core::AdminMenuSection AdminSection{*this};
-    Reports::ReportMenuSection ReportSection{*this};
+    Core::AdminMenuSection AdminSection{Runtime, Admins, [this](int slot) { return OpenAdminMenu(slot); }};
+    Reports::ReportMenuSection ReportSection{Runtime, Settings, Reports, ReportMenu};
     /** Migration result, shown by `admin_status`. */
     VoltMod::MigrationResult Migration;
 
