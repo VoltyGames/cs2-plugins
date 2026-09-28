@@ -17,6 +17,18 @@ release or relock until the end, one `/deploy-test` after the last phase.
 
 ## Phase 1: host names and cleanup (voltmod, no behaviour change)
 
+Done 2026-09-28 (local commits in voltmod, not pushed). Differences from the list below:
+
+- `src/Loader` keeps its name: merging `Host/Loading` into `Host/Plugins` removed the clash.
+- `GameDataService` is `GameDataTable`, not `GameData`: that name is already a member in three places.
+- `SchemaService` became one `SchemaCheck` class (in `SchemaCheck.hpp/.cpp` with the check and dump
+  functions), not a check plus a separate dumper.
+- `EngineHooks::Install` stays a fallible step; only `Uninstall` went (the destructor removes the hooks).
+- Kept: `GameDataTable::Lookup`'s reason as a view (the struct crosses into plugins as plain data),
+  and `ValidateDescriptor` in `InstalledPlugins` (SDK-free, so its tests run).
+- `SharedLibrary` keeps its name; `Close` is private.
+- The layering lint now reads private `"Module/..."` includes; Host -> Schema is allowed.
+
 Keep "Host" for the process-wide DLL and its root object only.
 
 | Now | New |
