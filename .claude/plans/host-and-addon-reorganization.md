@@ -23,7 +23,7 @@ Done 2026-09-28 (local commits in voltmod, not pushed). Differences from the lis
 - `GameDataService` is `GameDataTable`, not `GameData`: that name is already a member in three places.
 - `SchemaService` became one `SchemaCheck` class (in `SchemaCheck.hpp/.cpp` with the check and dump
   functions), not a check plus a separate dumper.
-- `EngineHooks::Install` stays a fallible step; only `Uninstall` went (the destructor removes the hooks).
+- `EngineHooks` installs in its constructor since phase 2 (it no longer resolves interfaces, so it cannot fail).
 - Kept: `GameDataTable::Lookup`'s reason as a view (the struct crosses into plugins as plain data),
   and `ValidateDescriptor` in `InstalledPlugins` (SDK-free, so its tests run).
 - `SharedLibrary` keeps its name; `Close` is private.
@@ -102,6 +102,11 @@ Cleanup in the same phase:
 - Update `docs/architecture.md`, `voltmod/CLAUDE.md` module list, and every doc naming the old types.
 
 ## Phase 2: host responsibilities (voltmod)
+
+Done 2026-09-28 (local commit in voltmod). `ServerAssets` lives in `Host/Files` and keeps plugin ->
+folder itself; `ResolveEngineInterfaces` (`Host/EngineInterfaces`) fails on the six the hooks need
+and logs the optional schema, resource and filesystem ones; `PluginRegistry::IsConnected` replaced
+`EngineHooks::_connected`. `IPluginCommands` was not split out.
 
 - `Host/Files/ServerAssets.{hpp,cpp}`: owns `IFileSystem*` and the mounted folder per plugin;
   `Mount(name)` before a plugin's `Load`, `Unmount(name)` after `Unload`. Remove `_files`,
