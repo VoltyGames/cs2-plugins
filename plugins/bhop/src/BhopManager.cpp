@@ -231,7 +231,7 @@ void BhopManager::OnPlayerJump(int slot)
         return;
     }
 
-    Vector velocity = pawn.Velocity();
+    Vector velocity = pawn.AbsVelocity();
     float speed = std::hypot(velocity.x, velocity.y);
     if (speed < 1.0f)
     {
@@ -241,7 +241,7 @@ void BhopManager::OnPlayerJump(int slot)
     float scaled = std::min(speed * boost.factor, std::max(boost.maxSpeed, speed));
     velocity.x *= scaled / speed;
     velocity.y *= scaled / speed;
-    pawn.SetVelocity(velocity);
+    pawn.SetAbsVelocity(velocity);
 }
 
 void BhopManager::ForceAutoHop(int slot)
@@ -258,7 +258,7 @@ void BhopManager::ForceAutoHop(int slot)
         return;
     }
 
-    Vector velocity = pawn.Velocity();
+    Vector velocity = pawn.AbsVelocity();
     if (velocity.z > 0.0f)
     {
         return;  // The engine already applied the jump.

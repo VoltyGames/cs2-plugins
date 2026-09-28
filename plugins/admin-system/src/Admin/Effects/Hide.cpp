@@ -26,10 +26,10 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                   .Setup = [&runtime](const ActionContext& ctx, int) -> EffectInstance {
                       // The controller keeps a team while dead or spectating; the pawn may not exist.
                       const Controller target = ctx.Target().Controller();
-                      const Team savedTeam = target.Team();
-                      std::string savedName(target.Name());
+                      const Team savedTeam = target.TeamNum();
+                      std::string savedName(target.PlayerName());
 
-                      target.SetName("");
+                      target.SetPlayerName("");
                       target.ChangeTeam(Team::Spectator);
 
                       int slot = ctx.Target().Slot();
@@ -50,9 +50,9 @@ Effect MakeHide(VoltMod::Runtime& runtime)
                                       {
                                           return;
                                       }
-                                      controller.SetName(savedName);
+                                      controller.SetPlayerName(savedName);
                                       // Joining T or CT also ends hide, and that choice wins.
-                                      if (savedTeam != Team::Spectator && controller.Team() == Team::Spectator)
+                                      if (savedTeam != Team::Spectator && controller.TeamNum() == Team::Spectator)
                                       {
                                           controller.ChangeTeam(savedTeam);
                                       }

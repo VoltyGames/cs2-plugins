@@ -136,7 +136,7 @@ void FunMode::GiveKnifeOnly(int slot)
     }
 
     pawn.StripWeapons(false);
-    pawn.GiveItem(pawn.Team() == VoltMod::Team::T ? KnifeT : KnifeCT);
+    pawn.GiveItem(pawn.TeamNum() == VoltMod::Team::T ? KnifeT : KnifeCT);
 }
 
 }  // namespace AdminSystem::Fun

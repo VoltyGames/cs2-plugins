@@ -23,7 +23,7 @@ const ParamAction SetHealth{Permission::Health, /*requireAlive*/ true,
 
 const ParamAction SetArmor{Permission::Health, /*requireAlive*/ true,
                            [](const ActionContext& ctx, int armor) -> OptKey {
-                               ctx.Target().Pawn().SetArmor(armor);
+                               ctx.Target().Pawn().SetArmorValue(armor);
                                return "broadcast.armored";
                            }};
 

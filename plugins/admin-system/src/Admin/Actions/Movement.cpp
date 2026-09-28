@@ -46,7 +46,7 @@ const Action Unbury{Permission::Control, /*requireAlive*/ true, [](const ActionC
 
 const ParamAction SetSpeed{Permission::Control, /*requireAlive*/ true,
                            [](const ActionContext& ctx, int percent) -> OptKey {
-                               ctx.Target().Pawn().SetSpeedModifier(percent / 100.0f);
+                               ctx.Target().Pawn().SetVelocityModifier(percent / 100.0f);
                                return "broadcast.speedSet";
                            }};
 

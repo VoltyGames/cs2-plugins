@@ -65,7 +65,7 @@ bool CheatCheckManager::StartCheck(int adminSlot, int targetSlot)
     const bool wasActive = _checks[targetSlot].Active;
     const VoltMod::MovementFreeze priorFreeze = wasActive ? _checks[targetSlot].Freeze : VoltMod::MovementFreeze{};
     const VoltMod::Team priorTeam =
-        wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? targetCtrl.Team() : VoltMod::Team::None);
+        wasActive ? _checks[targetSlot].PriorTeam : (cfg.moveToSpectator ? targetCtrl.TeamNum() : VoltMod::Team::None);
     if (wasActive)
     {
         ResetCheck(targetSlot);

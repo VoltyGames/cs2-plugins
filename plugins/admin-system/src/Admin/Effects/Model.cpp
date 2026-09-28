@@ -83,7 +83,7 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                           const Pawn pawn = entities.Pawn(targetSlot);
                           if (pawn.IsAlive())
                           {
-                              pawn.SetModel(DefaultModelForTeam(pawn.Team()));
+                              pawn.SetModel(DefaultModelForTeam(pawn.TeamNum()));
                           }
                       }};
                   }};
