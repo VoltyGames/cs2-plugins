@@ -1,6 +1,6 @@
 """The Stronghold jump pad built with modelkit: a skinned, animated scissor lift.
 
-Rebuilds plugins/stronghold/addon/models/stronghold/jump_pad in the scene "jump_pad" from the
+Rebuilds plugins/stronghold/content/models/stronghold/jump_pad in the scene "jump_pad" from the
 committed textures. Run it inside Blender with the repo root as REPO:
 
     ns = {"REPO": r"<repo>"}
@@ -21,7 +21,7 @@ modelkit.reload()
 from modelkit import objects, preview, rig, session, shapes, source2, surfaces  # noqa: E402
 
 FOLDER = "models/stronghold/jump_pad/"
-DIR = os.path.join(REPO, "plugins", "stronghold", "addon", FOLDER)  # noqa: F821
+DIR = os.path.join(REPO, "plugins", "stronghold", "content", FOLDER)  # noqa: F821
 
 # The deck is 38 x 30 with its top 14.5 up; +X, the launch direction, runs along its length.
 DECK_X, DECK_Y, DECK_TOP, DECK_BOTTOM = 19.0, 15.0, 14.5, 11.5

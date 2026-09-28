@@ -1,6 +1,6 @@
 """The Stronghold teleporter built with modelkit: glow, team colour and FX animations.
 
-Rebuilds plugins/stronghold/addon/models/stronghold/teleporter in the scene "teleporter" from the
+Rebuilds plugins/stronghold/content/models/stronghold/teleporter in the scene "teleporter" from the
 committed textures, and draws the well's glow. A rotor turns under the grate over the lit well,
 and on each teleport the team-coloured light strip lifts off as a hoop and sweeps past the player.
 Run it inside Blender with the repo root as REPO:
@@ -35,7 +35,7 @@ from modelkit import (  # noqa: E402
 )
 
 FOLDER = "models/stronghold/teleporter/"
-DIR = os.path.join(REPO, "plugins", "stronghold", "addon", FOLDER)  # noqa: F821
+DIR = os.path.join(REPO, "plugins", "stronghold", "content", FOLDER)  # noqa: F821
 
 # The drum is 47.2 across; the light strip rings it at 48, level with the placement box.
 DRUM, PANELS, SEAM = 23.6, 8, 0.2

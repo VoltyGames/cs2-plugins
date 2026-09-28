@@ -40,7 +40,7 @@ def running_cs2() -> list[str]:
 def lfs_rules(plugin: Path) -> list[str]:
     attributes = plugin / ".gitattributes"
     text = attributes.read_text() if attributes.exists() else ""
-    return [ext for ext in LFS_ART if f"addon/**/*.{ext} filter=lfs" not in text]
+    return [ext for ext in LFS_ART if f"content/**/*.{ext} filter=lfs" not in text]
 
 
 def main() -> int:
@@ -67,14 +67,14 @@ def main() -> int:
 
     if args.plugin:
         plugin = ROOT / "plugins" / args.plugin
-        source = plugin / "addon"
+        source = plugin / "content"
         content = client / "content" / "csgo_addons" / args.plugin
         ok &= report(source.is_dir(), "addon source", str(source.relative_to(ROOT)))
         kind = "junction" if content.is_junction() else "copy; compile.py mirrors into it"
         ok &= report(content.is_dir(), "addon content folder", f"{content} ({kind})")
         missing = lfs_rules(plugin)
         report(
-            not missing, "LFS rules", f"add addon/**/*.{{{','.join(missing)}}}" if missing else ""
+            not missing, "LFS rules", f"add content/**/*.{{{','.join(missing)}}}" if missing else ""
         )
     return 0 if ok else 1
 

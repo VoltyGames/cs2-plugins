@@ -172,9 +172,9 @@ categories, a pager, toggle switches, value steppers and a chat-prompt panel.
 Either way the client needs the compiled `admin_menu` layout on disk, and there are
 two ways to get it there.
 
-**Testing against your own client.** Leave `menu.addonId` at 0 and compile the
+**Testing against your own client.** Leave `addonId` at 0 and compile the
 layout into your client by hand. Nothing is downloaded and nobody else can see the
-menu, which is why the plugin says so in the server log at load.
+menu.
 
 ```bash
 uv run poe panorama                              # render, compile, install into your client
@@ -183,19 +183,19 @@ uv run poe run admin-system  # then set menu.panorama in the server's copy
 
 Reconnect after compiling; the client reads the layout at load.
 
-**Serving it to everyone.** Publish the addon and put its id in `menu.addonId`. The
-plugin then requires it of every connecting client, and an admin still downloading
-keeps center HTML until it lands.
+**Serving it to everyone.** The layout ships in the meatgg workshop addon, together
+with the main-menu screens, the rank icons and Stronghold's content. Put the
+addon's id in the top-level `addonId`; the plugin then requires it of every
+connecting client, and an admin who does not have it yet keeps center HTML. For
+prod the id is set in `plugins.admin-system.settings` in `deploy/inventory.yml`.
 
 The layout is this plugin's own, under `panorama/screens/admin_menu.*`, built from
-the framework's block library and coloured from meat.gg's palette. To publish it:
+the framework's block library and coloured from meat.gg's palette. To publish a
+change:
 
-1. Compile it into a Workshop Tools addon without touching your client:
-   `uv run poe panorama admin-system --addon meatgg_ui --no-deploy`
-2. Open that addon in the CS2 Workshop Tools, then the Workshop Manager, and submit it
-   as Public or Unlisted. A private item does not download for anyone else.
-3. Put the published id in `menu.addonId`. For prod that is
-   `plugins.admin-system.settings.menu` in `deploy/inventory.yml`.
+1. Build the addon without touching your client: `uv run poe meatgg-addon`
+2. Open meatgg in the CS2 Workshop Tools, then the Workshop Manager, and update the
+   item. It must stay Public or Unlisted; a private item does not download for anyone else.
 
 Before testing the download, delete the loose files `uv run poe panorama` copied
 into your client's `game/csgo/panorama/`, or the client keeps using them.

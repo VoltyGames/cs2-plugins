@@ -61,7 +61,7 @@ commands.Add("slap")
 - Verbs live on the entity they act on: `entity.AcceptInput`, `Remove`, `RemoveAfter`, `SetModel`, `SetRender`, `EmitSound`; `pawn.GiveItem`, `Launch`, `Heal`, `SetGodmode`, `SetMoveType`; `controller.ChangeTeam`, `Kick`, `ExecuteCommand`. Create through `runtime.Entities` (`Spawn`, `SpawnProp`, `SpawnParticle`, `SpawnBeam`); walk with `Find` and `FindAll`. Never pass `.Raw()` to a framework call.
 - Teams are `VoltMod::Team` with `IsPlaying` and `Opposite`; render colours are `VoltMod::Color{r, g, b[, a]}`. Handle fields end in `Ref` and return an `EntityRef`.
 - Schema fields are generated pairs: `pawn.Health()` reads, `pawn.SetHealth(100)` writes and replicates. Offsets are baked by `voltmod framework schemagen`; the load aborts if they no longer match the engine.
-- `runtime.Screens.Shared(layout)` and `runtime.Screens.ForPlayer(layout, slot)` return a move-only `Screen` whose destructor removes the entity; hold it as a member. `VoltMod::PlayerScreens` keeps one player screen per slot, created on first draw. `runtime.Addons.Require(id)` returns a `Subscription`; the requirement lasts as long as you hold it.
+- `runtime.Screens.Shared(layout)` and `runtime.Screens.ForPlayer(layout, slot)` return a move-only `Screen` whose destructor removes the entity; hold it as a member. `VoltMod::PlayerScreens` keeps one player screen per slot, created on first draw. `runtime.AddonManager.Add(Config.Get().addonId)` returns a `Subscription`; the requirement lasts as long as you hold it, and id 0 requires nothing. `IsReady(slot)` says whether a player has every addon any plugin requires.
 
 ## Errors and messages
 
@@ -71,7 +71,7 @@ commands.Add("slap")
 ## Menus and effects
 
 - `MenuBuilder(title).Add(ButtonRow{...})` for rows, admin-system's `Admin::Menu::ActionRows` for rows acting on an admin/target pair, `Flow<TState>::Create(menus, slot, state)` for multi-step actions.
-- Menus go through `runtime.Menus`: `OpenSession(slot, menu)` begins a session, `Open(slot, menu)` pushes onto it. With Panorama on, a plugin holds `runtime.UsePanorama(layout, addonId)`'s `Subscription` below its `VoltMod::PanoramaMenuLayout`; a player without the layout gets center HTML.
+- Menus go through `runtime.Menus`: `OpenSession(slot, menu)` begins a session, `Open(slot, menu)` pushes onto it. With Panorama on, a plugin holds `runtime.UsePanorama(layout)`'s `Subscription` below its `VoltMod::PanoramaMenuLayout`; a player who is not `AddonManager.IsReady` gets center HTML.
 - A Panorama menu screen is the framework's `menu` block (it draws the root panel too), styled by `menu_styles(ICONS)` from main-menu's `meatgg/menu_screen.css.j2`; don't restyle it per plugin.
 - A plugin adds a main menu entry by publishing `Contracts::IMenuSection` with `Exchange.Publish<Contracts::IMenuSection>(impl, id)` and keeping the returned `Subscription` as the publisher's last member; main-menu's config names the id.
 - Admin actions and effects are admin-system's own types (`Admin/Actions/`, `Admin/Effects/`): effects are `EffectDescriptor` values, and menu order comes from the explicit `MenuEffects` table.

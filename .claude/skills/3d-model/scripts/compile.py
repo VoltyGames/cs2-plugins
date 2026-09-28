@@ -5,7 +5,7 @@ Usage:
     uv run python .claude/skills/3d-model/scripts/compile.py <addon source> <folder>
         [--addon <name>] [--install client server] [--prune]
 
-    <addon source>  the addon's source tree in the repo, e.g. plugins/stronghold/addon
+    <addon source>  the addon's source tree in the repo, e.g. plugins/stronghold/content
     <folder>        a model's or effect's folder inside it, e.g. models/stronghold/jump_pad
 
 Steps: report source files no .vmdl, .vmat, .vpcf or DMX refers to (--prune deletes them), check
@@ -99,7 +99,7 @@ def main() -> int:
     client = Path(settings.get("CS2_CLIENT_PATH") or DEFAULT_CLIENT)
     source_root = (ROOT / args.source).resolve()
     addon = args.addon or (
-        source_root.parent.name if source_root.name == "addon" else source_root.name
+        source_root.parent.name if source_root.name == "content" else source_root.name
     )
     folder = source_root / args.folder
     if not folder.is_dir():

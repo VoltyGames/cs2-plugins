@@ -27,7 +27,6 @@ uv run poe run <plugin>                      # build, copy to CS2_SERVER_PATH an
 uv run poe install                           # copy every built plugin; name one to copy only it
 uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
 uv run poe meatgg-addon                      # build the meatgg workshop addon: every screen, Stronghold content, rank icons
-uv run poe panorama-publish                  # compile the main-menu and admin-system screens into the meatgg_ui addon folder
 uv run poe new-plugin <name>
 ```
 

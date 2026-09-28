@@ -3,6 +3,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from deploy.bundle.server_assets import has_source
+
 DEFAULT_CLIENT = r"C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive"
 STRONGHOLD_CONTENT = ("models", "materials", "particles", "scripts", "soundevents", "sounds")
 PANORAMA_OUTPUT = ("layout/custom_game", "styles/custom_game", "images/custom_game")
@@ -29,8 +31,14 @@ def main() -> None:
     compile_screens = ["panorama", "compile", *SCREENS, "--addon", "meatgg", "--no-deploy"]
     subprocess.run(["voltmod", *compile_screens], check=True)
 
+    # A compiled file whose source left the repo stays out of the addon.
+    content = Path(__file__).parents[1] / "plugins" / "stronghold" / "content"
     for folder in STRONGHOLD_CONTENT:
-        shutil.copytree(stronghold / folder, meatgg / folder)
+        for file in (stronghold / folder).rglob("*"):
+            relative = file.relative_to(stronghold)
+            if file.is_file() and has_source(content, relative):
+                (meatgg / relative).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(file, meatgg / relative)
     shutil.copytree(Path(__file__).parent / "meatgg", meatgg, dirs_exist_ok=True)
 
     print(f"Filled {meatgg}. Update the meatgg item in the Workshop Manager.")

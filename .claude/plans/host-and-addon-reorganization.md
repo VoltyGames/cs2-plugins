@@ -118,6 +118,12 @@ and logs the optional schema, resource and filesystem ones; `PluginRegistry::IsC
 
 ## Phase 3: MultiAddonManager (voltmod)
 
+Done 2026-09-28 (local commit). The host class is `Host/Workshop/WorkshopDownloads` (it implements
+`IPluginAddons`; the plugin-side wrapper is `MultiAddonManager`, and the host links the SDK, so the
+two cannot share a name). `DownloadQueue` holds everyone's list only. Also dropped: `MissingFor` and
+the `ClientReady` event (nothing used them). Hooks install on the first `Add` and go when nothing is
+required: `SendNetMessage` runs for every message.
+
 Today every plugin's `Runtime` builds its own `Addons` with its own `SendNetMessage` and
 `ReplyConnection` hooks, chained, and main-menu, admin-system and stronghold each require meatgg.
 
@@ -146,6 +152,10 @@ Today every plugin's `Runtime` builds its own `Addons` with its own `SendNetMess
 
 ## Phase 4: plugins
 
+Done 2026-09-28 except: `panorama/` stays beside `content/` (the voltmod CLI and CMake read
+`plugins/<name>/panorama`), and the brand kit stays in main-menu (screens reach it as `@main-menu/...`;
+moving it to `workshop/` would special-case the framework CLI for this repo).
+
 - Every plugin: one top-level `addonId` setting, default 0, required once in `App`:
   `_subs.Add(Runtime.AddonManager.Add(Config.Get().addonId))`. Remove `menu.addonId` from
   main-menu and admin-system; `UsePanorama(layout)`. Delete stronghold's `App::RequireAddon`.
@@ -164,6 +174,12 @@ Today every plugin's `Runtime` builds its own `Addons` with its own `SendNetMess
 - admin-system: `docs/admin-system.md` publish section -> meatgg.
 
 ## Phase 5: tooling and templates
+
+Partly done 2026-09-28: `panorama-publish` removed; `ServerAssets.export` and `build_meatgg.py` skip
+compiled files whose source left `content/` (`has_source`); `poe meatgg-addon` runs as a module.
+Skipped as not worth it: the `voltmod content` CLI and junction (`compile.py` mirrors; `assets.ps1`
+installs the whole compiled addon, which compile.py cannot do safely), the gameinfo.gi rewrite, rank
+icon sources, and the `--content` scaffold flag.
 
 - Delete `poe panorama-publish`, `plugins/stronghold/scripts/assets.ps1`, and every `meatgg_ui`
   mention.

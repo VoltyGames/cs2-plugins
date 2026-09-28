@@ -37,7 +37,6 @@ install = "voltmod install"
 serve = "voltmod serve"
 run = "voltmod run"
 panorama = "voltmod panorama compile"
-panorama-publish = "voltmod panorama compile main-menu admin-system --addon meatgg_ui --no-deploy"
 format = "voltmod format plugins contracts"
 deploy = "python -m deploy.cli"
 rcon = "python -m deploy.cli rcon"
@@ -45,7 +44,7 @@ schema = "voltmod database header"
 
 [tool.poe.tasks.meatgg-addon]
 help = "Build the meatgg workshop addon: every screen, Stronghold's content and the rank icons"
-cmd = "python workshop/build_meatgg.py"
+cmd = "python -m workshop.build_meatgg"
 
 [tool.poe.tasks.lint]
 help = "Lint the build tooling and check the plugin source conventions"
