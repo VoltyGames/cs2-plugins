@@ -69,7 +69,14 @@ def write_vmat(
 
 
 def write_vmdl(
-    path, meshes, hulls=(), animations=(), material_groups=None, attachments=(), surface="metal"
+    path,
+    meshes,
+    hulls=(),
+    animations=(),
+    material_groups=None,
+    attachments=(),
+    surface="metal",
+    scale=1.0,
 ):
     """Writes a ModelDoc .vmdl.
 
@@ -77,6 +84,7 @@ def write_vmdl(
     none until an input starts one. `material_groups`: {group: {from vmat: to vmat}}, the first
     being the default. `attachments`: [(name, bone, (x, y, z), (pitch, yaw, roll))].
     `surface` is the hulls' surface property; "metal_barrel" stops bullets however thin the hull.
+    `scale` resizes the whole model: meshes, hulls and animations.
     """
     nodes = [
         {"_class": "BoneMarkupList", "children": [], "bone_cull_type": "None"},
@@ -91,6 +99,8 @@ def write_vmdl(
         nodes.append(listing("AnimationList", [animation(*a) for a in animations]))
     if hulls:
         nodes.append(listing("PhysicsShapeList", [physics_hull(h, surface) for h in hulls]))
+    if scale != 1.0:
+        nodes.append(listing("ModelModifierList", [scale_and_mirror(scale)]))
     root = {"rootNode": {"_class": "RootNode", "children": nodes}}
     with open(path, "w", newline="\n") as f:
         f.write(HEADER + kv3(root) + "\n")
@@ -179,6 +189,18 @@ def physics_hull(dmx, surface):
         "surface_prop": surface,
         "collision_tags": "",
         "name": "",
+    }
+
+
+def scale_and_mirror(scale):
+    return {
+        "_class": "ModelModifier_ScaleAndMirror",
+        "scale": float(scale),
+        "mirror_x": False,
+        "mirror_y": False,
+        "mirror_z": False,
+        "flip_bone_forward": False,
+        "swap_left_and_right_bones": False,
     }
 
 

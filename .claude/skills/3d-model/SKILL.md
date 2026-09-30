@@ -85,7 +85,7 @@ Before designing, find what the plugin assumes about the model. Keep every name 
 the code in the same task.
 
 - **Path:** grep the plugin for `.vmdl`. In Stronghold it's `src/Assets/Catalog.cpp`.
-- **Size:** the scale, placement box, trigger radii (the jump pad's `Launcher`) and offsets
+- **Size:** the `.vmdl` scale, placement box, trigger radii (the jump pad's `Launcher`) and offsets
   measured on the mesh, such as muzzles and each part's `At`.
 - **Names:** attachments, animations, material groups (`Skin`) and bones.
 - **Assets doc:** the plugin's `docs/assets.md` has the addon layout and licence status.
@@ -117,8 +117,8 @@ scene, and give imported references a scene of their own.
   `objects.join` makes the render mesh and `objects.hull` the collision.
 - **A finished mesh:** `objects.vertices(body, material=..., bone=...)` picks a part, and
   `objects.transform` moves or scales it. Add parts with `objects.join([body, *parts], body.name)`
-  and repoint a renamed material with `objects.replace_material`. To only resize, use the
-  plugin's scale.
+  and repoint a renamed material with `objects.replace_material`. To only resize, use
+  `write_vmdl(scale=…)`.
 - **Size:** compare against a player. A floor prop over about 40 units wide looks oversized.
 - **Detail:** add bevels, a trim material, bolts, vents, an inset and normal maps. 5–12k
   triangles is fine.
@@ -190,9 +190,9 @@ uv run voltmod content compile <plugin> models/<plugin>/<model> --install client
 
 ## 9. Wire it into the plugin
 
-- Point the plugin at the `.vmdl`, and update the scale, placement box, trigger radii and measured
-  offsets. In Stronghold, `Scale` in `StructureAssets` resizes the model, collision and animation
-  without a recompile.
+- Point the plugin at the `.vmdl`, and update the placement box, trigger radii and measured
+  offsets. Resize with `write_vmdl(scale=…)`, which scales the mesh, hulls and animation; write
+  the offsets in code at that final size.
 - Start a loop with the `SetAnimationLooping` input; in Stronghold, name it in `Idle` in
   `StructureAssets`. `prop_dynamic` has no `SetAnimation` input (`game/core/base.fgd`).
 - Play a one-shot with `Entity::PlayAnimation(animation, idle)`, which returns to the loop after.
