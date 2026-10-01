@@ -99,11 +99,6 @@ namespace AdminSystem::Database::Tables
       using data_type = ::sqlpp::text;
       using has_default = std::false_type;
     };
-    struct Groups {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(groups, groups);
-      using data_type = ::sqlpp::text;
-      using has_default = std::true_type;
-    };
     struct DisplayPrefix {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(display_prefix, displayPrefix);
       using data_type = ::sqlpp::boolean;
@@ -154,13 +149,17 @@ namespace AdminSystem::Database::Tables
       using data_type = ::sqlpp::text;
       using has_default = std::true_type;
     };
+    struct GroupId {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(group_id, groupId);
+      using data_type = std::optional<::sqlpp::integral>;
+      using has_default = std::true_type;
+    };
     SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admins, admins);
     template<typename T>
     using _table_columns = sqlpp::table_columns<T,
                Id,
                SteamId,
                Name,
-               Groups,
                DisplayPrefix,
                NameColor,
                MessageColor,
@@ -170,7 +169,8 @@ namespace AdminSystem::Database::Tables
                FrozenAt,
                FrozenBy,
                FreezeReason,
-               Permissions>;
+               Permissions,
+               GroupId>;
     using _required_insert_columns = sqlpp::detail::type_set<
                sqlpp::column_t<sqlpp::table_t<Admins_>, SteamId>,
                sqlpp::column_t<sqlpp::table_t<Admins_>, Name>>;
@@ -377,47 +377,6 @@ namespace AdminSystem::Database::Tables
   };
   using Servers = ::sqlpp::table_t<Servers_>;
 
-  struct AdminServerGroups_ {
-    struct Id {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(id, id);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    struct AdminSteamId {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_steam_id, adminSteamId);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::false_type;
-    };
-    struct ServerTag {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(server_tag, serverTag);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct GroupName {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(group_name, groupName);
-      using data_type = ::sqlpp::text;
-      using has_default = std::false_type;
-    };
-    struct CreatedAt {
-      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(created_at, createdAt);
-      using data_type = ::sqlpp::integral;
-      using has_default = std::true_type;
-    };
-    SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_server_groups, adminServerGroups);
-    template<typename T>
-    using _table_columns = sqlpp::table_columns<T,
-               Id,
-               AdminSteamId,
-               ServerTag,
-               GroupName,
-               CreatedAt>;
-    using _required_insert_columns = sqlpp::detail::type_set<
-               sqlpp::column_t<sqlpp::table_t<AdminServerGroups_>, AdminSteamId>,
-               sqlpp::column_t<sqlpp::table_t<AdminServerGroups_>, ServerTag>,
-               sqlpp::column_t<sqlpp::table_t<AdminServerGroups_>, GroupName>>;
-  };
-  using AdminServerGroups = ::sqlpp::table_t<AdminServerGroups_>;
-
   struct AdminActivity_ {
     struct Id {
       SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(id, id);
@@ -587,6 +546,47 @@ namespace AdminSystem::Database::Tables
                sqlpp::column_t<sqlpp::table_t<PlayerReports_>, TargetSteamId>>;
   };
   using PlayerReports = ::sqlpp::table_t<PlayerReports_>;
+
+  struct AdminServerGroups_ {
+    struct Id {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(id, id);
+      using data_type = ::sqlpp::integral;
+      using has_default = std::true_type;
+    };
+    struct AdminSteamId {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_steam_id, adminSteamId);
+      using data_type = ::sqlpp::integral;
+      using has_default = std::false_type;
+    };
+    struct ServerTag {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(server_tag, serverTag);
+      using data_type = ::sqlpp::text;
+      using has_default = std::false_type;
+    };
+    struct GroupId {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(group_id, groupId);
+      using data_type = ::sqlpp::integral;
+      using has_default = std::false_type;
+    };
+    struct CreatedAt {
+      SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(created_at, createdAt);
+      using data_type = ::sqlpp::integral;
+      using has_default = std::true_type;
+    };
+    SQLPP_CREATE_NAME_TAG_FOR_SQL_AND_CPP(admin_server_groups, adminServerGroups);
+    template<typename T>
+    using _table_columns = sqlpp::table_columns<T,
+               Id,
+               AdminSteamId,
+               ServerTag,
+               GroupId,
+               CreatedAt>;
+    using _required_insert_columns = sqlpp::detail::type_set<
+               sqlpp::column_t<sqlpp::table_t<AdminServerGroups_>, AdminSteamId>,
+               sqlpp::column_t<sqlpp::table_t<AdminServerGroups_>, ServerTag>,
+               sqlpp::column_t<sqlpp::table_t<AdminServerGroups_>, GroupId>>;
+  };
+  using AdminServerGroups = ::sqlpp::table_t<AdminServerGroups_>;
 
 
 }  // namespace AdminSystem::Database::Tables

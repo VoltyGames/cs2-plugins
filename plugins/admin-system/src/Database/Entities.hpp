@@ -4,21 +4,22 @@
 
 #include <VoltMod/Core/Time/Durations.hpp>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace AdminSystem::Database
 {
 
-/** An administrator: the permissions and groups they hold, plus their chat and panel preferences. */
+/** An administrator: the group and permissions they hold, plus their chat and panel preferences. */
 struct Admin
 {
     int64_t Id = 0;
     int64_t SteamId = 0;
     std::string Name;
-    /** In memory this is the EFFECTIVE set for this server (global `admins.groups` merged with
-     *  this server's `admin_server_groups` grants at load time); the DB column is global-only. */
-    std::vector<std::string> Groups;
+    /** In memory this is the group on this server: an `admin_server_groups` row replaces
+     *  `admins.group_id` at load time. */
+    std::optional<int64_t> GroupId;
     std::vector<std::string> Permissions;
 
     /** Per-admin chat overrides. Empty color strings fall back to the admin's group. */

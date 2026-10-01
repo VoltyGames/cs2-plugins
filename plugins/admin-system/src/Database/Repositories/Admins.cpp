@@ -37,7 +37,7 @@ std::vector<Admin> AdminRepository::FindAll()
                 Admin{.Id = row.id,
                       .SteamId = row.steamId,
                       .Name = std::string(row.name),
-                      .Groups = ReadNameList(row.groups, "admins.groups", std::to_string(row.steamId)),
+                      .GroupId = row.groupId,
                       .Permissions = ReadNameList(row.permissions, "admins.permissions", std::to_string(row.steamId)),
                       .DisplayPrefix = row.displayPrefix,
                       .NameColor = std::string(row.nameColor),
@@ -73,16 +73,16 @@ std::vector<AdminGroup> AdminRepository::FindAllGroups()
     });
 }
 
-std::unordered_map<int64_t, std::vector<std::string>> AdminRepository::FindGroupsForServer(const std::string& serverTag)
+std::unordered_map<int64_t, int64_t> AdminRepository::FindServerGroups(const std::string& serverTag)
 {
     return _db.RunOr("find_server_groups", [serverTag](auto& conn) {
         const Tables::AdminServerGroups t;
-        std::unordered_map<int64_t, std::vector<std::string>> grants;
-        for (const auto& row : conn(sqlpp::select(t.adminSteamId, t.groupName).from(t).where(t.serverTag == serverTag)))
+        std::unordered_map<int64_t, int64_t> groups;
+        for (const auto& row : conn(sqlpp::select(t.adminSteamId, t.groupId).from(t).where(t.serverTag == serverTag)))
         {
-            grants[row.adminSteamId].emplace_back(row.groupName);
+            groups[row.adminSteamId] = row.groupId;
         }
-        return grants;
+        return groups;
     });
 }
 

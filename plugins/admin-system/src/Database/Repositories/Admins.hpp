@@ -12,7 +12,7 @@
 namespace AdminSystem::Database
 {
 
-/** Admins, the groups they inherit from, and the per-server grants on top. The reads block and
+/** Admins, their groups, and the per-server groups that replace them. The reads block and
  *  are load-time only; every write is fire-and-forget. */
 class AdminRepository
 {
@@ -22,8 +22,8 @@ public:
     std::vector<Admin> FindAll();
     std::vector<AdminGroup> FindAllGroups();
 
-    /** steamId -> group names granted on @p serverTag, on top of the global `admins.groups`. */
-    std::unordered_map<int64_t, std::vector<std::string>> FindGroupsForServer(const std::string& serverTag);
+    /** steamId -> group id on @p serverTag, replacing the admin's `admins.group_id` there. */
+    std::unordered_map<int64_t, int64_t> FindServerGroups(const std::string& serverTag);
 
     /** Persist the per-admin chat overrides set via the admin chat-settings menu. */
     void UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, const std::string& nameColor,

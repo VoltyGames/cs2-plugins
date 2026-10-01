@@ -1,12 +1,12 @@
--- Seed the first admin. Edit the SteamID, name and groups, then render it for your driver and
+-- Seed the first admin. Edit the SteamID, name and group, then render it for your driver and
 -- pipe it into a client:
 --   uv run voltmod database sql plugins/admin-system/database/seed-admin.sql --driver postgres | psql -d admin_system
 -- Run `!admin_reload` afterwards to pick it up without a restart.
-@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions)
+@INSERT_IF_ABSENT@ admins (steam_id, name, group_id, permissions)
 VALUES (
   76561198153558892,   -- your SteamID64
   '.NET Player',       -- display name
-  '["super_admin"]',   -- group memberships, JSON array text
+  (SELECT id FROM admin_groups WHERE name = 'super_admin'),
   '[]'                 -- extra permissions on top of the group's, JSON array text
 )
 @ON_CONFLICT(steam_id)@;
@@ -17,7 +17,7 @@ VALUES ('admin', '["admin.freeze_admins","admin.kick","admin.ban","admin.unban",
 @ON_CONFLICT(name)@;
 
 -- The UPDATE demotes a SteamID that already holds a higher role.
-@INSERT_IF_ABSENT@ admins (steam_id, name, groups, permissions)
-VALUES (76561198093475210, 'Hikka', '["admin"]', '[]')
+@INSERT_IF_ABSENT@ admins (steam_id, name, group_id, permissions)
+VALUES (76561198093475210, 'Hikka', (SELECT id FROM admin_groups WHERE name = 'admin'), '[]')
 @ON_CONFLICT(steam_id)@;
-UPDATE admins SET groups = '["admin"]', permissions = '[]' WHERE steam_id = 76561198093475210;
+UPDATE admins SET group_id = (SELECT id FROM admin_groups WHERE name = 'admin'), permissions = '[]' WHERE steam_id = 76561198093475210;

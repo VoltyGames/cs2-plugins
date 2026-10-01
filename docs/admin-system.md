@@ -130,8 +130,7 @@ vote runs at a time, and both entries need `admin.vote`.
 
 Permissions are names stored as JSON arrays in `admins.permissions` and
 `admin_groups.permissions`, for example `'["admin.kick", "admin.ban"]'`. An
-admin holds the union of their own permissions and those of every group granted
-to them. `*` grants everything, and `admin.*` grants every `admin.` permission.
+admin holds the union of their own permissions and those of their group. `*` grants everything, and `admin.*` grants every `admin.` permission.
 
 | Permission | Access |
 | --- | --- |
@@ -157,7 +156,7 @@ Migration `0003_permission_names` converts the old flag letters to these names.
 Immunity is separate from permissions and gates punishments only: a kick, ban, mute,
 warning or admin freeze needs immunity strictly higher than the target's. Actions and
 effects - slay, teleport, health, fun and the rest - are open to any admin holding the
-permission, whatever rank the target holds. Immunity comes from the admin's groups;
+permission, whatever rank the target holds. Immunity comes from the admin's group;
 `admin_groups.immunity` is the only place it is set. `!admin` needs no permission, but
 the caller must be a registered admin, and each menu category is still gated individually.
 
@@ -227,16 +226,17 @@ Seed the first admin the same way, after putting your SteamID64 in the file:
 uv run voltmod database sql database/seed-admin.sql --driver postgres | psql -d admin_system
 ```
 
-`admins.groups` and `admin_groups.inherits` hold a JSON array as text (for
-example `'["super_admin"]'`) on every backend, not a native array column.
-Anything else reading those two columns directly, such as the website, has to
-parse JSON.
+`admins.group_id` names the admin's one group. `admins.permissions`,
+`admin_groups.permissions` and `admin_groups.inherits` hold a JSON array as text
+(for example `'["admin.kick"]'`) on every backend, not a native array column.
+Anything else reading those columns directly, such as the website, has to parse
+JSON.
 
 | Table | Holds |
 | --- | --- |
 | `admins` | Admin records, permissions, and freeze state |
 | `admin_groups` | Named permission and immunity bundles |
-| `admin_server_groups` | Which groups an admin holds on which server tag |
+| `admin_server_groups` | The group that replaces an admin's own on one server tag |
 | `admin_activity` | Audit trail of every punishment an admin issued |
 | `players` | Seen players, names, and IP addresses |
 | `punishments` | Bans, voice mutes, text mutes and warnings, active and lifted, told apart by `kind` |
@@ -254,8 +254,8 @@ identity that keeps them apart, so it must be unique and must not change once
 grants reference it.
 
 - Punishments are network-wide. A ban issued anywhere applies everywhere.
-- Admin grants are per-server through `admin_server_groups`, keyed by
-  `server.tag`. An admin can be root on one server and unprivileged on another.
+- An `admin_server_groups` row replaces the admin's group on one `server.tag`.
+  An admin can be root on one server and a moderator on another.
 - Abuse-protection windows and admin freezes are network-wide, so an admin
   frozen on one server is frozen on all of them.
 

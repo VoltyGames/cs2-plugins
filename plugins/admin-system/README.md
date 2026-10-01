@@ -175,18 +175,18 @@ Several servers can share one database:
 Treat `server.tag` as permanent once grants reference it. On startup, the
 plugin registers the server and updates `last_seen` every minute.
 
-- `admins.groups` applies network-wide.
-- `admin_server_groups` adds groups for one `server.tag`.
-- Admin permissions are global; immunity comes from the admin's groups.
+- `admins.group_id` applies network-wide; an admin holds one group.
+- An `admin_server_groups` row replaces that group on one `server.tag`.
+- Admin permissions are global; immunity comes from the admin's group.
 - Group permissions and immunity apply wherever that group is granted.
 - Bans, mutes, and warnings apply across all servers sharing the database.
 
 Example per-server grant:
 
 ```sql
-INSERT INTO admin_server_groups (admin_steam_id, server_tag, group_name)
-VALUES (76561198000000000, 'server-1', 'super_admin')
-ON CONFLICT (admin_steam_id, server_tag, group_name) DO NOTHING;
+INSERT INTO admin_server_groups (admin_steam_id, server_tag, group_id)
+VALUES (76561198000000000, 'server-1', (SELECT id FROM admin_groups WHERE name = 'super_admin'))
+ON CONFLICT (server_tag, admin_steam_id) DO UPDATE SET group_id = EXCLUDED.group_id;
 ```
 
 Run `!admin_reload` on affected servers after changing grants.

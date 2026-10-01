@@ -5,9 +5,7 @@
 #include "Database/Repositories/Admins.hpp"
 
 #include <VoltMod/Core/Log.hpp>
-#include <algorithm>
 #include <format>
-#include <utility>
 
 namespace AdminSystem::Admin
 {
@@ -29,21 +27,11 @@ bool AdminManager::LoadAdmins()
         _admins[admin.SteamId] = admin;
     }
 
-    // Merge server grants into each admin's effective group list.
-    for (auto& [steamId, groupNames] : _repos.Admins.FindGroupsForServer(_config.Get().server.tag))
+    for (const auto& [steamId, groupId] : _repos.Admins.FindServerGroups(_config.Get().server.tag))
     {
-        auto it = _admins.find(steamId);
-        if (it == _admins.end())
+        if (auto it = _admins.find(steamId); it != _admins.end())
         {
-            continue;
-        }
-        auto& groups = it->second.Groups;
-        for (auto& name : groupNames)
-        {
-            if (std::find(groups.begin(), groups.end(), name) == groups.end())
-            {
-                groups.push_back(std::move(name));
-            }
+            it->second.GroupId = groupId;
         }
     }
 
@@ -64,7 +52,7 @@ bool AdminManager::LoadGroups()
     _resolvedStyles.clear();
     for (const auto& group : groups)
     {
-        _groups[group.Name] = group;
+        _groups[group.Id] = group;
     }
 
     Log::Info("Loaded {} admin group(s) from database.", _groups.size());
@@ -126,7 +114,9 @@ int AdminManager::GetImmunity(int64_t steamId)
         return 0;
     }
 
-    return ResolveImmunity(it->second);
+    // TODO: Recursively resolve inherited groups
+    const Database::AdminGroup* group = FindGroup(it->second);
+    return group ? group->Immunity : 0;
 }
 
 bool AdminManager::CanPunish(int64_t adminSteamId, int64_t targetSteamId)
@@ -143,7 +133,7 @@ void AdminManager::AddAdmin(const Database::Admin& admin)
 
 void AdminManager::AddGroup(const Database::AdminGroup& group)
 {
-    _groups[group.Name] = group;
+    _groups[group.Id] = group;
     _resolvedStyles.clear();  // any admin in this group may now resolve to a different prefix
 }
 
@@ -169,33 +159,14 @@ AdminChatStyle AdminManager::GetChatStyle(int64_t steamId)
         return style;  // Non-admin: empty style.
     }
 
-    // Pick the highest-immunity group that has a non-empty ChatPrefix. This way an admin in
-    // both "moderator" and "headadmin" gets the headadmin tag, while an admin in only "vip"
-    // (no prefix) falls through to the configured default.
-    const Database::AdminGroup* chosen = nullptr;
-    for (const auto& groupName : adminIt->second.Groups)
+    // A group without a ChatPrefix falls through to the configured default.
+    const Database::AdminGroup* group = FindGroup(adminIt->second);
+    if (group && !group->ChatPrefix.empty())
     {
-        auto groupIt = _groups.find(groupName);
-        if (groupIt == _groups.end())
-        {
-            continue;
-        }
-        if (groupIt->second.ChatPrefix.empty())
-        {
-            continue;
-        }
-        if (!chosen || groupIt->second.Immunity > chosen->Immunity)
-        {
-            chosen = &groupIt->second;
-        }
-    }
-
-    if (chosen)
-    {
-        style.Prefix = chosen->ChatPrefix;
-        style.PrefixColor = chosen->PrefixColor;
-        style.NameColor = chosen->NameColor;
-        style.MessageColor = chosen->MessageColor;
+        style.Prefix = group->ChatPrefix;
+        style.PrefixColor = group->PrefixColor;
+        style.NameColor = group->NameColor;
+        style.MessageColor = group->MessageColor;
     }
     else
     {
@@ -243,40 +214,26 @@ void AdminManager::UpdateChatStyleAsync(int64_t steamId, bool displayPrefix, con
     _resolvedStyles.erase(steamId);
 }
 
+const Database::AdminGroup* AdminManager::FindGroup(const Database::Admin& admin) const
+{
+    if (!admin.GroupId)
+    {
+        return nullptr;
+    }
+    auto it = _groups.find(*admin.GroupId);
+    return it != _groups.end() ? &it->second : nullptr;
+}
+
 AdminManager::PermissionSet AdminManager::ResolvePermissions(const Database::Admin& admin)
 {
     PermissionSet granted(admin.Permissions.begin(), admin.Permissions.end());
 
-    for (const auto& groupName : admin.Groups)
+    // TODO: Recursively resolve inherited groups
+    if (const Database::AdminGroup* group = FindGroup(admin))
     {
-        auto groupIt = _groups.find(groupName);
-        if (groupIt != _groups.end())
-        {
-            granted.insert(groupIt->second.Permissions.begin(), groupIt->second.Permissions.end());
-
-            // TODO: Recursively resolve inherited groups
-        }
+        granted.insert(group->Permissions.begin(), group->Permissions.end());
     }
-
     return granted;
-}
-
-int AdminManager::ResolveImmunity(const Database::Admin& admin)
-{
-    int maxImmunity = 0;
-
-    for (const auto& groupName : admin.Groups)
-    {
-        auto groupIt = _groups.find(groupName);
-        if (groupIt != _groups.end())
-        {
-            maxImmunity = std::max(maxImmunity, groupIt->second.Immunity);
-
-            // TODO: Recursively resolve inherited groups
-        }
-    }
-
-    return maxImmunity;
 }
 
 }  // namespace AdminSystem::Admin

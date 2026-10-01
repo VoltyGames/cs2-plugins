@@ -15,8 +15,8 @@ namespace AdminSystem::Admin
 {
 
 /**
- * Resolved chat styling for a single admin, derived from their highest-immunity group
- * that has a non-empty ChatPrefix (with config-driven fallback when none does).
+ * Resolved chat styling for a single admin, from their group's ChatPrefix (with config-driven
+ * fallback when the group has none).
  */
 struct AdminChatStyle
 {
@@ -76,11 +76,11 @@ private:
     Database::Repositories& _repos;
     const Config::ConfigManager& _config;
 
+    const Database::AdminGroup* FindGroup(const Database::Admin& admin) const;
     PermissionSet ResolvePermissions(const Database::Admin& admin);
-    int ResolveImmunity(const Database::Admin& admin);
 
     std::unordered_map<int64_t, Database::Admin> _admins;
-    std::unordered_map<std::string, Database::AdminGroup> _groups;
+    std::unordered_map<int64_t, Database::AdminGroup> _groups;
 
     std::unordered_map<int64_t, PermissionSet> _resolvedPermissions;
 

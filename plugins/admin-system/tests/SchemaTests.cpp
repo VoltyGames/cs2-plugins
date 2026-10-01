@@ -43,8 +43,8 @@ static void WithMigratedDb(Body body)
 TEST_CASE("The migrations build the schema the generated specs describe")
 {
     WithMigratedDb([](Database& db, const auto& migration) {
-        CHECK(migration.Applied == 4);
-        CHECK(migration.CurrentVersion == 4);
+        CHECK(migration.Applied == 5);
+        CHECK(migration.CurrentVersion == 5);
 
         // SQLite raises "no such column" when a spec and the schema disagree, so selecting
         // every column is the whole check. Matching no rows keeps it cheap.
@@ -84,7 +84,7 @@ TEST_CASE("Applying the migrations twice changes nothing")
         auto again = RunMigrations(db, MigrationsDir());
         CHECK(again.Success);
         CHECK(again.Applied == 0);
-        CHECK(again.CurrentVersion == 4);
+        CHECK(again.CurrentVersion == 5);
     });
 }
 
