@@ -67,7 +67,7 @@ private:
     Punishments::PunishmentManager& _punishments;
     CheatCheckView _view{_rt, _config, _chat};
     /** Panel refresh loop. Declared after _view because its callback reads through it. */
-    VoltMod::CenterHtml _panel{_rt.Messages, _rt.Scheduler};
+    VoltMod::CenterHtml _panel{_rt.Messages, _rt.Scheduler, _rt.Slots};
 
     void Tick(int targetSlot);
     void Expire(int targetSlot);
