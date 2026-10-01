@@ -71,7 +71,13 @@ admin-system, main-menu, anticheat and bhop adapt to any API change from phase 1
 ## Not in scope
 
 - The shop preload's proper fix (models loaded with the map, `.claude/notes/2026-09-25-structure-model-preload.md`).
-- Per-shot muzzle, impact and casing particles stay entities.
+- Per-shot muzzle, impact and casing particles stay entities: about 300-500 created and removed a
+  second in a big fight, bounded but churning CPU and network. Two ways out, neither cheap:
+  - Send the effects without entities, through the engine's particle user messages. VoltMod would
+    need new messaging support, and every effect would have to be re-checked in a game client.
+  - Merge muzzle, tracer and impact into one particle system per shot. That means recompiling the
+    particle files and republishing the meatgg addon, which waits on Steam moderation and players'
+    cached copies.
 - The host's SendNetMessage hook for workshop downloads stays (one hook, cheap filter).
 
 ## Progress log
