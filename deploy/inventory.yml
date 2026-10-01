@@ -48,8 +48,7 @@ plugins:
     settings:
       plugin: { locale: ru }
       addonId: 3809904923
-      economy: { startMoney: 5000 }
-      features: { tanks: false }
+      economy: { startMoney: 60000 }
 
 servers:
   - id: panel-a
