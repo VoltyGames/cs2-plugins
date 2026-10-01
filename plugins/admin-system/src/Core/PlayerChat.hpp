@@ -6,7 +6,7 @@
 #include "Punishments/PunishmentManager.hpp"
 
 #include <VoltMod/Core/Signals/Subscription.hpp>
-#include <VoltMod/Core/Time/Throttle.hpp>
+#include <VoltMod/Core/Time/Cooldown.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
@@ -66,8 +66,8 @@ private:
     /** The red "you are muted" line, plus the expiry and reason when the mute row is in hand. */
     void ReplyMuteNotice(int slot, std::string_view noticeKey, const std::optional<Database::Punishment>& mute);
 
-    VoltMod::Throttle<int> _voiceMuteNotice{MuteNoticeIntervalSec};
-    VoltMod::Throttle<int> _textMuteNotice{MuteNoticeIntervalSec};
+    VoltMod::Cooldown<int> _voiceMuteNotice{MuteNoticeIntervalSec};
+    VoltMod::Cooldown<int> _textMuteNotice{MuteNoticeIntervalSec};
 
     /** Declared last so the handler stops before the state it captures. */
     VoltMod::Subscription _said;

@@ -25,7 +25,7 @@ ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<in
         return {ReportDenial::Disabled};
     }
 
-    if (int64_t wait = _anyTarget.RemainingSec(reporterSteamId, now, config.cooldownSec); wait > 0)
+    if (int64_t wait = _anyTarget.SecondsLeft(reporterSteamId, now, config.cooldownSec); wait > 0)
     {
         return {ReportDenial::OnCooldown, wait};
     }
@@ -33,7 +33,7 @@ ReportGate ReportManager::EvaluateGate(int64_t reporterSteamId, std::optional<in
     if (targetSteamId)
     {
         const auto pair = std::pair{reporterSteamId, *targetSteamId};
-        if (int64_t wait = _perTarget.RemainingSec(pair, now, config.duplicateWindowSec); wait > 0)
+        if (int64_t wait = _perTarget.SecondsLeft(pair, now, config.duplicateWindowSec); wait > 0)
         {
             return {ReportDenial::OnCooldown, wait};
         }
@@ -103,14 +103,14 @@ void ReportManager::Submit(const VoltMod::Player& reporter, const VoltMod::Playe
 
 void ReportManager::StartCooldown(int64_t reporterSteamId, int64_t targetSteamId, int64_t now)
 {
-    _anyTarget.Acquire(reporterSteamId, now);
-    _perTarget.Acquire({reporterSteamId, targetSteamId}, now);
+    _anyTarget.Start(reporterSteamId, now);
+    _perTarget.Start({reporterSteamId, targetSteamId}, now);
 
     // Both maps only grow here, so this is the one place worth sweeping.
     const auto& config = _config.Get().reports;
     const int64_t horizon = std::max(config.cooldownSec, config.duplicateWindowSec);
-    _anyTarget.Prune(now, horizon);
-    _perTarget.Prune(now, horizon);
+    _anyTarget.RemoveExpired(now, horizon);
+    _perTarget.RemoveExpired(now, horizon);
 }
 
 void ReportManager::ReleaseCooldown(int64_t reporterSteamId, int64_t targetSteamId)

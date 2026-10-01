@@ -87,7 +87,7 @@ void PlayerChat::HandleSay(VoltMod::ChatMessage& chat)
     if (_punishments.IsPunished(Punishments::PunishType::TextMute, steamId))
     {
         const int slot = chat.Sender.Slot();
-        if (_textMuteNotice.TryAcquire(slot, Time::Now()))
+        if (_textMuteNotice.TryStart(slot, Time::Now()))
         {
             ReplyMuteNotice(slot, "muteNotice.text",
                             _punishments.GetActive(Punishments::PunishType::TextMute, steamId));
@@ -112,7 +112,7 @@ void PlayerChat::NotifyVoiceMuted(Player* player)
     }
 
     int slot = player->Slot();
-    if (!_voiceMuteNotice.TryAcquire(slot, Time::Now()))
+    if (!_voiceMuteNotice.TryStart(slot, Time::Now()))
     {
         return;
     }

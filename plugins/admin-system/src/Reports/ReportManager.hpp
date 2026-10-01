@@ -4,7 +4,7 @@
 #include "Database/Repositories.hpp"
 
 #include <VoltMod/Api.hpp>
-#include <VoltMod/Core/Time/Throttle.hpp>
+#include <VoltMod/Core/Time/Cooldown.hpp>
 #include <VoltMod/Players/Player.hpp>
 #include <cstdint>
 #include <functional>
@@ -74,8 +74,8 @@ private:
     void ReleaseCooldown(int64_t reporterSteamId, int64_t targetSteamId);
 
     /** Intervals come from reloadable config, so they are passed per call rather than constructed. */
-    VoltMod::Throttle<int64_t> _anyTarget;               // reporter -> last report of anyone
-    VoltMod::PairThrottle<int64_t, int64_t> _perTarget;  // (reporter, target) -> last report of that player
+    VoltMod::Cooldown<int64_t> _anyTarget;               // reporter -> last report of anyone
+    VoltMod::PairCooldown<int64_t, int64_t> _perTarget;  // (reporter, target) -> last report of that player
 };
 
 }  // namespace AdminSystem::Reports
