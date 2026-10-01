@@ -97,5 +97,12 @@ admin-system, main-menu, anticheat and bhop adapt to any API change from phase 1
   `EntitySystem::SpawnLine`, `Spawning.cpp` renamed `EntitySystemSpawn.cpp`), stronghold 7c44dab.
   A temporary `sh_probe_line` showed control point 1 still holding the end's handle 200 ms after
   spawn, 6 of 6 times; removed before commit.
-- Still open, checks in a client: turret sweep near players, sensor tower glow, tracers and laser
-  beams drawn to their end, center-HTML menu flicker at the 100 ms re-send.
+- 2026-10-01: the user found riders on the ground, the drone tablet on the ground and the sensor
+  tower glow stuck where a player died, on the local Windows server. Not from this work: since
+  voltmod 1e92ada (09-23) `Entity::AcceptInput` handed the engine a pointer into a destroyed
+  `std::string`, and MSVC's destructor writes 0 into its first byte, so every input value under 16
+  characters arrived empty (`SetParent`/`FollowEntity "!activator"`, `SetParentAttachment`, `Skin`,
+  `SetAnimationLooping`). libstdc++ leaves the bytes, so Linux worked by luck. Fixed in voltmod
+  1764a37; the user confirmed riders, tablet and glow in a client.
+- Still open, checks in a client: turret sweep near players, tracers and laser beams drawn to their
+  end, center-HTML menu flicker at the 100 ms re-send.
