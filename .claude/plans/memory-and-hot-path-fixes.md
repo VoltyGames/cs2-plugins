@@ -91,5 +91,11 @@ admin-system, main-menu, anticheat and bhop adapt to any API change from phase 1
   Left out, each well under a millisecond a second: `Riders()`'s allocation, `IsLockedOn`'s slot
   loop, the HUD's cached global hides, the structure panel, air defense and projectile flight.
   Dropped grenades and launchers piled up all round (`weapon_auto_cleanup_time 0`); now 30 s, max 40.
-- Still open: 2.1 tracer names (needs 1.4), and checks in a client: turret sweep near players,
-  sensor tower glow, center-HTML menu flicker at the 100 ms re-send.
+- 2026-10-01: 1.4 and 2.1 done with the user's go-ahead to read prod's Linux dump (through the
+  panel's signed `/files/download` URL; `/files/contents` refuses a file that size). Linux puts
+  `m_hControlPointEnts` at 3460, Windows at 2724. voltmod e49729c..e457081 (schemagen handle arrays,
+  `EntitySystem::SpawnLine`, `Spawning.cpp` renamed `EntitySystemSpawn.cpp`), stronghold 7c44dab.
+  A temporary `sh_probe_line` showed control point 1 still holding the end's handle 200 ms after
+  spawn, 6 of 6 times; removed before commit.
+- Still open, checks in a client: turret sweep near players, sensor tower glow, tracers and laser
+  beams drawn to their end, center-HTML menu flicker at the 100 ms re-send.
