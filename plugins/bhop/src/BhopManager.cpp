@@ -266,7 +266,7 @@ void BhopManager::ForceAutoHop(int slot)
 
     constexpr float DefaultJumpImpulse = 301.993378f;  // sqrt(2 * 800 * 57.0)
     velocity.z = _jumpImpulse ? _jumpImpulse.Get() : DefaultJumpImpulse;
-    pawn.Launch(velocity);
+    pawn.SetVelocity(velocity);
 
     // Forced hops do not emit player_jump.
     OnPlayerJump(slot);

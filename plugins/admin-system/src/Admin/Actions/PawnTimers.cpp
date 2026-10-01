@@ -26,7 +26,7 @@ PawnTimers::PawnTimers(VoltMod::Runtime& runtime) : _runtime(runtime), _timers(r
 
 void PawnTimers::Slap(const VoltMod::Pawn& pawn, float upward, float horizontal, int fallProtectMs)
 {
-    pawn.Launch(Vector{Jitter(horizontal), Jitter(horizontal), upward});
+    pawn.SetVelocity(Vector{Jitter(horizontal), Jitter(horizontal), upward});
 
     const int slot = pawn.Slot();
     if (fallProtectMs <= 0 || !VoltMod::IsValidSlot(slot))
