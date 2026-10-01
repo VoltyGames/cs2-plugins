@@ -625,8 +625,8 @@ wheels = [
 
 [[package]]
 name = "voltmod"
-version = "1.7.5"
-source = { git = "https://github.com/voltygg/voltmod.git?rev=main#9c7bfc8d4eb85fde5ba77f6374f00b3c14acb589" }
+version = "1.7.6"
+source = { git = "https://github.com/voltygg/voltmod.git?rev=main#f2bd84bf77e2d237ed7c3548f259369bc6832bc4" }
 dependencies = [
     { name = "clang-format" },
     { name = "cmake" },
