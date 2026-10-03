@@ -48,7 +48,7 @@ plugins:
     settings:
       plugin: { locale: ru }
       addonId: 3809904923
-      economy: { startMoney: 60000 }
+      economy: { startMoney: 15000 }
 
 servers:
   - id: panel-a
