@@ -124,8 +124,6 @@ private:
     VoltMod::Status LoadAdminData();
     VoltMod::Status InitializePunishments();
     void RegisterGameEventListeners();
-    /** A voice-muted sender is heard by nobody. */
-    void RegisterVoiceMuteHook();
     void InstallStatusReporting();
     void RegisterCommands();
 

@@ -23,23 +23,35 @@ namespace AdminSystem
 {
 
 /** Keeps a voice-muted sender from being heard: the engine runs with listening off. */
-static VoltMod::HookResult<bool> SilenceMuted(App& app, IVEngineServer2& engine, CPlayerSlot receiver,
+static VoltMod::HookResult<bool> SilenceMuted(VoltMod::PlayerManager& players,
+                                             const Punishments::PunishmentManager& punishments,
+                                             Core::PlayerChat& chat, IVEngineServer2& engine, CPlayerSlot receiver,
                                              CPlayerSlot sender, bool listen)
 {
     if (!listen)
     {
         return {};
     }
-    VoltMod::Player* muted = app.Runtime.Players.Get(sender.Get());
-    if (!muted || !app.Punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
+    VoltMod::Player* muted = players.Get(sender.Get());
+    if (!muted || !punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
     {
         return {};
     }
 
     // Called once per receiver; ChatService collapses it to one chat line.
-    app.PlayerChat.NotifyVoiceMuted(muted);
+    chat.NotifyVoiceMuted(muted);
     VoltMod::CallOriginal(&IVEngineServer2::SetClientListening, &engine, receiver, sender, false);
     return VoltMod::HookResult<bool>::Block(false);
+}
+
+static VoltMod::Subscription HookVoiceMute(IVEngineServer2* engine, VoltMod::PlayerManager& players,
+                                           const Punishments::PunishmentManager& punishments, Core::PlayerChat& chat)
+{
+    const auto onSetClientListening = [&players, &punishments, &chat](IVEngineServer2& engine, CPlayerSlot receiver,
+                                                                      CPlayerSlot sender, bool listen) {
+        return SilenceMuted(players, punishments, chat, engine, receiver, sender, listen);
+    };
+    return VoltMod::HookInterface(&IVEngineServer2::SetClientListening, engine, onSetClientListening);
 }
 
 App::~App()
@@ -157,14 +169,6 @@ Status App::InitializePunishments()
         return std::unexpected(Error::Failed("failed to load active punishments"));
     }
     return {};
-}
-
-void App::RegisterVoiceMuteHook()
-{
-    const auto onSetClientListening = [this](IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender,
-                                             bool listen) { return SilenceMuted(*this, engine, receiver, sender, listen); };
-    _subs.Add(VoltMod::HookInterface(&IVEngineServer2::SetClientListening, Runtime.Unsafe.Interfaces.Engine,
-                                     onSetClientListening));
 }
 
 void App::RegisterGameEventListeners()
@@ -294,7 +298,7 @@ bool App::Load()
     }
 
     RegisterGameEventListeners();
-    RegisterVoiceMuteHook();
+    _subs.Add(HookVoiceMute(Runtime.Unsafe.Interfaces.Engine, Runtime.Players, Punishments, PlayerChat));
     // Takes effect on the next map load.
     Admin::Effects::PrecacheModels(Runtime);
     // Reports bad map names now, not at the first !map.
