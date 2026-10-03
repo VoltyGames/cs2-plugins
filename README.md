@@ -18,6 +18,7 @@ Native C++23 plugins for Counter-Strike 2 dedicated servers, built on
 | [admin-system](plugins/admin-system/README.md) | Admins, punishments, player controls, menus, reports, and multi-server permissions | Uses PostgreSQL, MariaDB, or bundled SQLite |
 | [anticheat](https://github.com/voltygg/cs2-anticheat) | Server-side aim analysis and client-integrity checks | Can use admin-system for alerts and bans; detection also works alone |
 | [bhop](plugins/bhop/README.md) | Smooth, client-predicted bunnyhop with per-player grants | Admin-system is needed only for grants mode |
+| [deathmatch](plugins/deathmatch/README.md) | Valve's free-for-all deathmatch with random spawns away from live players and no bonus rounds | Start the server with `+game_type 1 +game_mode 2` |
 | [main-menu](plugins/main-menu/) | A configurable `!menu` hub for stats, VIP, admin tools, and website links | Supports Panorama UI with a center-HTML fallback |
 | [stronghold](https://github.com/voltygg/cs2-stronghold) | Build-and-defend team deathmatch: instant respawn, an economy, and buildable structures guarding each team's Core | In development |
 

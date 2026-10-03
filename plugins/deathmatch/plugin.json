@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/voltygg/voltmod/main/templates/plugin.schema.json",
+  "name": "deathmatch",
+  "version": "1.0.0",
+  "logTag": "DM",
+  "description": "Valve's free-for-all deathmatch with random spawns away from live players and no bonus rounds.",
+  "author": "Sukhrob Ilyosbekov",
+  "website": "https://github.com/voltygg/cs2-plugins",
+  "license": "proprietary",
+  "dependencies": [],
+  "optionalDependencies": []
+}

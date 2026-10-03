@@ -47,6 +47,7 @@ uv run poe build --relock                  # before committing; commit conan.loc
 plugins/admin-system/  Admins, punishments, menus, reports, Postgres/MariaDB/SQLite
 plugins/anticheat/     Detection cores, engine adapters, responses
 plugins/bhop/          Bunnyhop modes
+plugins/deathmatch/    Valve deathmatch mode rules
 plugins/main-menu/     !menu hub; owns the meat.gg Panorama brand kit (panorama/templates/meatgg)
 contracts/             Interfaces shared between plugins (header-only, not a plugin)
 deploy/                Deploy CLI for panel servers and Docker hosts
