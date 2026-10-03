@@ -1,9 +1,6 @@
 #include "ModeRules.hpp"
 
-#include <VoltMod/Core/Files/File.hpp>
 #include <VoltMod/Core/Log.hpp>
-#include <VoltMod/Core/Text/Strings.hpp>
-#include <string>
 #include <string_view>
 
 namespace Log = VoltMod::Log;
@@ -25,27 +22,9 @@ ModeRules::ModeRules(VoltMod::Runtime& runtime) : _runtime(runtime)
 
 void ModeRules::Apply()
 {
-    const std::string path = _runtime.PluginFile("configs/deathmatch.cfg");
-    auto text = VoltMod::ReadAllText(path);
-    if (!text)
+    if (auto applied = _runtime.ConVars.ExecuteFile(_runtime.PluginFile("configs/deathmatch.cfg")); !applied)
     {
-        Log::Warn("Deathmatch rules not applied: {}", text.error().Detail);
-        return;
-    }
-
-    std::string_view rest = *text;
-    while (!rest.empty())
-    {
-        const auto end = rest.find('\n');
-        const std::string_view raw = rest.substr(0, end);
-        rest = end == std::string_view::npos ? std::string_view{} : rest.substr(end + 1);
-
-        const std::string line = VoltMod::Strings::Trim(raw.substr(0, raw.find("//")));
-        if (line.empty())
-        {
-            continue;
-        }
-        _runtime.ConVars.ExecuteServerCommand(line);
+        Log::Warn("Deathmatch rules not applied: {}", applied.error().Detail);
     }
 }
 
@@ -62,8 +41,8 @@ void ModeRules::CheckGameMode()
     {
         return;
     }
-    Log::Warn("The server runs game_type {} / game_mode {}; start it with +game_type 1 +game_mode 2 for deathmatch",
-              type->Get(), mode->Get());
+    Log::Warn("The server runs game_type {} / game_mode {}; start it with +game_type {} +game_mode {} for deathmatch",
+              type->Get(), mode->Get(), DeathmatchType, DeathmatchMode);
 }
 
 }  // namespace Deathmatch

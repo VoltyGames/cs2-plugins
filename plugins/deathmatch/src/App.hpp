@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Config.hpp"
 #include "ModeRules.hpp"
 #include "Scoreboard.hpp"
 
@@ -20,7 +19,6 @@ struct App final : VoltMod::Plugin
         return true;
     }
 
-    ConfigManager Config = VoltMod::LoadConfig<ConfigManager>(Runtime);
     ModeRules Rules{Runtime};
     Scoreboard Score{Runtime};
 };

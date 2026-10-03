@@ -14,7 +14,7 @@ public:
     /** Reapplies the rules on every map start: Valve's gamemode cfg resets them on a map change. */
     explicit ModeRules(VoltMod::Runtime& runtime);
 
-    /** Runs the cfg line by line (`exec` reads only csgo/cfg). */
+    /** Runs the cfg line by line. */
     void Apply();
 
     /** Logs a warning unless the server runs `game_type 1` / `game_mode 2`. */
