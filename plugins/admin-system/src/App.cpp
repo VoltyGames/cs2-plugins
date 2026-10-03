@@ -22,6 +22,26 @@ namespace Log = VoltMod::Log;
 namespace AdminSystem
 {
 
+/** Keeps a voice-muted sender from being heard: the engine runs with listening off. */
+static VoltMod::HookResult<bool> SilenceMuted(App& app, IVEngineServer2& engine, CPlayerSlot receiver,
+                                             CPlayerSlot sender, bool listen)
+{
+    if (!listen)
+    {
+        return {};
+    }
+    VoltMod::Player* muted = app.Runtime.Players.Get(sender.Get());
+    if (!muted || !app.Punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
+    {
+        return {};
+    }
+
+    // Called once per receiver; ChatService collapses it to one chat line.
+    app.PlayerChat.NotifyVoiceMuted(muted);
+    VoltMod::CallOriginal(&IVEngineServer2::SetClientListening, &engine, receiver, sender, false);
+    return VoltMod::HookResult<bool>::Block(false);
+}
+
 App::~App()
 {
     CheatCheck.CancelAll();
@@ -141,26 +161,10 @@ Status App::InitializePunishments()
 
 void App::RegisterVoiceMuteHook()
 {
-    _subs.Add(VoltMod::HookInterface(
-        &IVEngineServer2::SetClientListening, Runtime.Unsafe.Interfaces.Engine,
-        [this](IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender,
-               bool listen) -> VoltMod::HookResult<bool> {
-            if (!listen)
-            {
-                return {};
-            }
-            VoltMod::Player* muted = Runtime.Players.Get(sender.Get());
-            if (!muted || !Punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
-            {
-                return {};
-            }
-
-            // Called once per receiver; ChatService collapses it to one chat line.
-            PlayerChat.NotifyVoiceMuted(muted);
-            // Let the engine run with listening off.
-            VoltMod::CallOriginal(&IVEngineServer2::SetClientListening, &engine, receiver, sender, false);
-            return VoltMod::HookResult<bool>::Block(false);
-        }));
+    const auto onSetClientListening = [this](IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender,
+                                             bool listen) { return SilenceMuted(*this, engine, receiver, sender, listen); };
+    _subs.Add(VoltMod::HookInterface(&IVEngineServer2::SetClientListening, Runtime.Unsafe.Interfaces.Engine,
+                                     onSetClientListening));
 }
 
 void App::RegisterGameEventListeners()
