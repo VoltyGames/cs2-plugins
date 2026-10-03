@@ -52,7 +52,7 @@ commands.Add("slap")
 - Construct per-slot state with the slot feed: `VoltMod::PerSlot<State> _state{runtime.Slots};`.
 - Dropping a subscription unsubscribes, and cancels a `Scheduler` timer, so a fire-and-forget deferral still needs an owner.
 - Hook services arm on the first subscription and disarm on the last. There is no `Install()`/`Enable()`. A leaked subscription leaves a live vtable hook after reload, and the host logs it by name when the plugin unloads.
-- Name each hook handler in a local and pass it by name. Longer logic, and the hook install itself, go in `static` functions at the top of the .cpp, not in `Install()`-style members.
+- Name each hook handler in a local and pass it by name, so the hook call stays one line. Longer logic goes in a `static` function at the top of the .cpp, or a private member when it needs class state.
 - For an engine function the framework does not cover: `HookInterface`, `HookVirtual` or `HookFunction` from `<VoltMod/Unsafe/Hook.hpp>`, keeping the `Subscription` it returns. A handler is a lambda taking the hooked object first; a before-handler returns `HookResult` or nothing, an after-handler observes.
 
 ## Entities
