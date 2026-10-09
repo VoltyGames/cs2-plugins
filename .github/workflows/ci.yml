@@ -30,7 +30,7 @@ jobs:
           git config --global url."https://x-access-token:${PRIVATE_PLUGINS_PAT}@github.com/".insteadOf "https://github.com/"
           git submodule update --init --checkout plugins/anticheat plugins/stronghold
 
-      - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
+      - uses: VoltyGames/voltmod/.github/actions/setup-toolchain@main
 
       - name: Build
         run: voltmod build -p linux-steamrt-release

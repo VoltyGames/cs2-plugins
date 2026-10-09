@@ -26,13 +26,13 @@ commands:
             curl -LsSf https://astral.sh/uv/install.sh | sh
             "$HOME/.local/bin/uv" venv --python 3.14 "$HOME/.voltmod"
             "$HOME/.local/bin/uv" pip install --python "$HOME/.voltmod/bin/python" --no-cache \
-              "voltmod @ git+https://github.com/voltygg/voltmod.git@$VOLTMOD_REF"
+              "voltmod @ git+https://github.com/VoltyGames/voltmod.git@$VOLTMOD_REF"
             echo 'export PATH="$HOME/.voltmod/bin:$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
             echo 'export VIRTUAL_ENV="$HOME/.voltmod"' >> "$BASH_ENV"
             export PATH="$HOME/.voltmod/bin:$HOME/.local/bin:$PATH"
             export VIRTUAL_ENV="$HOME/.voltmod"
             conan profile detect --force >/dev/null 2>&1 || true
-            conan config install https://github.com/voltygg/voltmod.git -sf conan \
+            conan config install https://github.com/VoltyGames/voltmod.git -sf conan \
               --args "--branch $VOLTMOD_REF"
 
 jobs:

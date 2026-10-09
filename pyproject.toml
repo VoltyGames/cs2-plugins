@@ -7,7 +7,7 @@ requires-python = ">=3.14"
 license = { text = "MIT" }
 
 dependencies = [
-    "voltmod @ git+https://github.com/voltygg/voltmod.git@main",
+    "voltmod @ git+https://github.com/VoltyGames/voltmod.git@main",
     "ruff>=0.14.0",
     "poethepoet>=0.47.0",
 ]

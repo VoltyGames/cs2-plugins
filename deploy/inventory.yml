@@ -1,4 +1,4 @@
-runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime
+runtime_image: ghcr.io/voltygames/cs2-plugins/cs2-server-runtime
 
 database:
   sslMode: require

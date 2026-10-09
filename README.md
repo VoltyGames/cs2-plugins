@@ -1,11 +1,11 @@
 # CS2 plugins
 
-[![CI](https://github.com/voltygg/cs2-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/voltygg/cs2-plugins/actions/workflows/ci.yml)
+[![CI](https://github.com/VoltyGames/cs2-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/VoltyGames/cs2-plugins/actions/workflows/ci.yml)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus)](https://en.cppreference.com/w/cpp/23)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Native C++23 plugins for Counter-Strike 2 dedicated servers, built on
-[VoltMod](https://github.com/voltygg/voltmod).
+[VoltMod](https://github.com/VoltyGames/voltmod).
 
 <p align="center">
   <img src="docs/assets/meatgg-ui-workshop-preview.png" alt="Preview of the meat.gg Panorama menu interface" width="720">
@@ -16,11 +16,11 @@ Native C++23 plugins for Counter-Strike 2 dedicated servers, built on
 | Plugin | Purpose | Requirements |
 | --- | --- | --- |
 | [admin-system](plugins/admin-system/README.md) | Admins, punishments, player controls, menus, reports, and multi-server permissions | Uses PostgreSQL, MariaDB, or bundled SQLite |
-| [anticheat](https://github.com/voltygg/cs2-anticheat) | Server-side aim analysis and client-integrity checks | Can use admin-system for alerts and bans; detection also works alone |
+| [anticheat](https://github.com/VoltyGames/cs2-anticheat) | Server-side aim analysis and client-integrity checks | Can use admin-system for alerts and bans; detection also works alone |
 | [bhop](plugins/bhop/README.md) | Smooth, client-predicted bunnyhop with per-player grants | Admin-system is needed only for grants mode |
 | [deathmatch](plugins/deathmatch/README.md) | Valve's free-for-all deathmatch with random spawns away from live players and no bonus rounds | Start the server with `+game_type 1 +game_mode 2` |
 | [main-menu](plugins/main-menu/) | A configurable `!menu` hub for stats, VIP, admin tools, and website links | Supports Panorama UI with a center-HTML fallback |
-| [stronghold](https://github.com/voltygg/cs2-stronghold) | Build-and-defend team deathmatch: instant respawn, an economy, and buildable structures guarding each team's Core | In development |
+| [stronghold](https://github.com/VoltyGames/cs2-stronghold) | Build-and-defend team deathmatch: instant respawn, an economy, and buildable structures guarding each team's Core | In development |
 
 Shared interfaces between plugins live in `contracts/`.
 
@@ -29,7 +29,7 @@ Shared interfaces between plugins live in `contracts/`.
 You need a Counter-Strike 2 dedicated server. Metamod:Source is optional.
 
 1. Download the plugin archive from the repository's
-   [releases](https://github.com/voltygg/cs2-plugins/releases).
+   [releases](https://github.com/VoltyGames/cs2-plugins/releases).
 2. Extract it into the server's `game/csgo` directory. The archive includes the VoltMod host and
    the selected plugin.
 3. In `game/csgo/gameinfo.gi`, add `Game csgo/addons/voltmod` directly above `Game csgo`. A CS2
@@ -46,7 +46,7 @@ Local Windows development requires Git, [uv](https://docs.astral.sh/uv/), Python
 Visual Studio 2022 or newer with the C++ workload, and a local CS2 dedicated server.
 
 ```powershell
-git clone https://github.com/voltygg/cs2-plugins.git
+git clone https://github.com/VoltyGames/cs2-plugins.git
 cd cs2-plugins
 Copy-Item .env.example .env      # set CS2_SERVER_PATH in .env
 uv sync
@@ -86,7 +86,7 @@ The last command builds and installs `admin-system`, then starts the server. Out
 | [Admin system](docs/admin-system.md) | Configure permissions, databases, and a multi-server installation |
 | [Deployment](deploy/README.md) | Package and deploy to panel servers or Docker hosts |
 | [Contributing](CONTRIBUTING.md) | Follow the repository's development and review conventions |
-| [VoltMod documentation](https://voltygg.github.io/voltmod/) | Learn the framework APIs and host model |
+| [VoltMod documentation](https://voltygames.github.io/voltmod/) | Learn the framework APIs and host model |
 
 ## Repository layout
 

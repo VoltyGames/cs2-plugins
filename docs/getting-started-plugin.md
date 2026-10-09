@@ -93,12 +93,12 @@ Everything that is not specific to this repository lives in the framework's docs
 
 | Page | Covers |
 | --- | --- |
-| [Getting started](https://github.com/voltygg/voltmod/blob/main/docs/getting-started.md) | the plugin shape, first command, first build |
-| [Plugin](https://github.com/voltygg/voltmod/blob/main/docs/plugin.md) | the load cycle, `App`, hooks, game events |
-| [Config](https://github.com/voltygg/voltmod/blob/main/docs/config.md) | settings, schemas, translations |
-| [Commands](https://github.com/voltygg/voltmod/blob/main/docs/commands.md) | registration, permissions, targeting |
-| [SDK wrappers](https://github.com/voltygg/voltmod/blob/main/docs/sdk.md) | entities, events, hooks, messaging |
-| [Testing](https://github.com/voltygg/voltmod/blob/main/docs/testing.md) | the SDK-free test suite |
+| [Getting started](https://github.com/VoltyGames/voltmod/blob/main/docs/getting-started.md) | the plugin shape, first command, first build |
+| [Plugin](https://github.com/VoltyGames/voltmod/blob/main/docs/plugin.md) | the load cycle, `App`, hooks, game events |
+| [Config](https://github.com/VoltyGames/voltmod/blob/main/docs/config.md) | settings, schemas, translations |
+| [Commands](https://github.com/VoltyGames/voltmod/blob/main/docs/commands.md) | registration, permissions, targeting |
+| [SDK wrappers](https://github.com/VoltyGames/voltmod/blob/main/docs/sdk.md) | entities, events, hooks, messaging |
+| [Testing](https://github.com/VoltyGames/voltmod/blob/main/docs/testing.md) | the SDK-free test suite |
 
 ## Troubleshooting
 

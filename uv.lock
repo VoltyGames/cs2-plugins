@@ -190,7 +190,7 @@ deploy = [
 requires-dist = [
     { name = "poethepoet", specifier = ">=0.47.0" },
     { name = "ruff", specifier = ">=0.14.0" },
-    { name = "voltmod", git = "https://github.com/voltygg/voltmod.git?rev=main" },
+    { name = "voltmod", git = "https://github.com/VoltyGames/voltmod.git?rev=main" },
 ]
 
 [package.metadata.requires-dev]
@@ -625,8 +625,8 @@ wheels = [
 
 [[package]]
 name = "voltmod"
-version = "1.7.11"
-source = { git = "https://github.com/voltygg/voltmod.git?rev=main#e67b952e29581267a9a365759c7d5250faf44bef" }
+version = "1.7.13"
+source = { git = "https://github.com/VoltyGames/voltmod.git?rev=main#2d54926a385e8e045c33d1f6ff745c1866a76a22" }
 dependencies = [
     { name = "clang-format" },
     { name = "cmake" },

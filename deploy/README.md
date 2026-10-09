@@ -41,7 +41,7 @@ load, and so do two servers with one id, two instances of a server with one name
 server using a plugin that is not declared under `plugins`.
 
 ```yaml
-runtime_image: ghcr.io/voltygg/cs2-plugins/cs2-server-runtime
+runtime_image: ghcr.io/voltygames/cs2-plugins/cs2-server-runtime
 
 database:
   sslMode: require

@@ -8,7 +8,7 @@ layer through Conan.
 Install Python 3.14+, uv, and a C++23 compiler:
 
 ```powershell
-git clone https://github.com/voltygg/cs2-plugins.git
+git clone https://github.com/VoltyGames/cs2-plugins.git
 cd cs2-plugins
 uv sync
 uv run poe doctor

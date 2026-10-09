@@ -65,7 +65,7 @@ jobs:
           git submodule update --init --checkout plugins/anticheat plugins/stronghold
 
       # Toolchain only, so it tracks main: conan.lock decides which framework the plugins link.
-      - uses: voltygg/voltmod/.github/actions/setup-toolchain@main
+      - uses: VoltyGames/voltmod/.github/actions/setup-toolchain@main
 
       - name: Build
         run: voltmod build -p linux-steamrt-release

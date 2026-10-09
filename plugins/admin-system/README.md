@@ -1,7 +1,7 @@
 # Admin system
 
 [![Version](https://img.shields.io/badge/version-1.0.0-7c3aed.svg)](plugin.json)
-[![CI](https://github.com/voltygg/cs2-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/voltygg/cs2-plugins/actions/workflows/ci.yml)
+[![CI](https://github.com/VoltyGames/cs2-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/VoltyGames/cs2-plugins/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
 Database-backed administration for Counter-Strike 2 servers. It includes an in-game panel,

@@ -1,15 +1,15 @@
 # Dev convenience, not a build input: conanfile.py pins voltmod. ignore = all hides the pointer.
 [submodule "voltmod"]
 	path = voltmod
-	url = https://github.com/voltygg/voltmod.git
+	url = https://github.com/VoltyGames/voltmod.git
 	ignore = all
 
 # Closed source: update = none stops clones without access from fetching it.
 [submodule "plugins/anticheat"]
 	path = plugins/anticheat
-	url = https://github.com/voltygg/cs2-anticheat.git
+	url = https://github.com/VoltyGames/cs2-anticheat.git
 	update = none
 [submodule "plugins/stronghold"]
 	path = plugins/stronghold
-	url = https://github.com/voltygg/cs2-stronghold.git
+	url = https://github.com/VoltyGames/cs2-stronghold.git
 	update = none
