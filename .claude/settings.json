@@ -6,9 +6,7 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "WebFetch(domain:wiki.alliedmods.net)",
-      "WebFetch(domain:cs2.poggu.me)",
-      "Bash(Select-Object FullName, Length)",
-      "mcp__plugin_context7_context7__*"
+      "WebFetch(domain:cs2.poggu.me)"
     ]
   }
 }
