@@ -8,15 +8,12 @@
       ],
       "includePath": [
         "${workspaceFolder}/voltmod/include",
-        "${workspaceFolder}/references/hl2sdk/public",
-        "${workspaceFolder}/references/hl2sdk/public/engine",
-        "${workspaceFolder}/references/hl2sdk/public/mathlib",
-        "${workspaceFolder}/references/hl2sdk/public/tier0",
-        "${workspaceFolder}/references/hl2sdk/public/tier1",
-        "${workspaceFolder}/references/hl2sdk/public/entity2",
-        "${workspaceFolder}/references/hl2sdk/game/shared",
-        "${workspaceFolder}/references/hl2sdk/game/server",
-        "${workspaceFolder}/references/hl2sdk/common"
+        "${workspaceFolder}/references/s2sdk/public",
+        "${workspaceFolder}/references/s2sdk/public/mathlib",
+        "${workspaceFolder}/references/s2sdk/public/tier0",
+        "${workspaceFolder}/references/s2sdk/public/entity2",
+        "${workspaceFolder}/references/s2sdk/game/shared",
+        "${workspaceFolder}/references/s2sdk/common"
       ],
       "defines": [
         "COMPILER_MSVC",
@@ -42,15 +39,12 @@
       ],
       "includePath": [
         "${workspaceFolder}/voltmod/include",
-        "${workspaceFolder}/references/hl2sdk/public",
-        "${workspaceFolder}/references/hl2sdk/public/engine",
-        "${workspaceFolder}/references/hl2sdk/public/mathlib",
-        "${workspaceFolder}/references/hl2sdk/public/tier0",
-        "${workspaceFolder}/references/hl2sdk/public/tier1",
-        "${workspaceFolder}/references/hl2sdk/public/entity2",
-        "${workspaceFolder}/references/hl2sdk/game/shared",
-        "${workspaceFolder}/references/hl2sdk/game/server",
-        "${workspaceFolder}/references/hl2sdk/common"
+        "${workspaceFolder}/references/s2sdk/public",
+        "${workspaceFolder}/references/s2sdk/public/mathlib",
+        "${workspaceFolder}/references/s2sdk/public/tier0",
+        "${workspaceFolder}/references/s2sdk/public/entity2",
+        "${workspaceFolder}/references/s2sdk/game/shared",
+        "${workspaceFolder}/references/s2sdk/common"
       ],
       "defines": [
         "COMPILER_GCC",

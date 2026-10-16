@@ -12,7 +12,7 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parents[3]
 CHECKOUT = ROOT / "voltmod"
 SEED = ROOT / "build" / "linux-seed"
-OWN_RECIPES = ("voltmod", "sqlpp23", "hl2sdk-cs2", "khook")
+OWN_RECIPES = ("voltmod", "sqlpp23", "s2sdk", "khook")
 
 
 def git(*args: str) -> str:

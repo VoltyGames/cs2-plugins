@@ -36,8 +36,8 @@ uv run poe build
 binary; `poe test -R <regex>` narrows it. `poe lint` runs ruff, `voltmod lint`, and the
 Panorama and schema checks.
 
-Mis-cased includes compile on Windows and fail on Linux CI. hl2sdk's `Color.h`, `KeyValues.h`,
-`CommandBuffer.h` and `PlayerState.h` need exact case.
+Mis-cased includes compile on Windows and fail on Linux CI. s2sdk's headers are lower case
+(`color.h`, `keyvalues.h`, `commandbuffer.h`); write them exactly.
 
 ## Working on the framework too
 
@@ -133,7 +133,7 @@ window.
 | `vswhere.exe is not recognized` | Put `C:\Program Files (x86)\Microsoft Visual Studio\Installer` on `PATH` |
 | CS2 server path is invalid | Point `CS2_SERVER_PATH` at the directory above `game/`, not at `game/csgo` |
 | Conan profiles or the `volty` remote are missing | `uv run poe bootstrap`. Set `VOLTMOD_SKIP_REMOTE_SETUP=1` only when something else manages remotes |
-| Missing HL2SDK or KHook package | A publication problem, not a source one. Check the build uses `windows-msvc.txt` or `linux-steamrt.txt` |
+| Missing s2sdk or KHook package | A publication problem, not a source one. Check the build uses `windows-msvc.txt` or `linux-steamrt.txt` |
 | Missing SDK binaries in the Conan cache | `uv run poe release build sdk` from `voltmod`, in the dev shell; they are excluded from `--build=missing` |
 | `volt` is an unknown command | The host did not start; the console's `[VoltMod]` lines say why |
 | The plugin is missing from `volt list` | Check `game/csgo/addons/voltmod/plugins/<name>/plugin.json` and `<name>.dll` |

@@ -55,8 +55,8 @@ copy fails with `WinError 32`. A plugin with a custom UI shows nothing until `po
   `build/windows-msvc-release` and rerun.
 - SDK binaries missing from the Conan cache: `uv run poe release build sdk` inside `voltmod`.
 - Profiles or remote missing: `uv run poe bootstrap`.
-- An include compiles here and fails on Linux CI: fix its case (`Color.h`, `KeyValues.h`,
-  `CommandBuffer.h`, `PlayerState.h`).
+- An include compiles here and fails on Linux CI: fix its case; s2sdk's headers are lower case
+  (`color.h`, `keyvalues.h`, `commandbuffer.h`).
 
 ## Report
 

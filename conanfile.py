@@ -10,7 +10,7 @@ from conan.tools.cmake import CMakeDeps, CMakeToolchain
 class CS2PluginsConan(ConanFile):
     settings: Any = "os", "compiler", "build_type", "arch"
 
-    # VoltMod supplies cpr, glaze, sqlpp23 and its connectors, HL2SDK, and KHook transitively.
+    # VoltMod supplies cpr, glaze, sqlpp23 and its connectors, s2sdk, and KHook transitively.
     requires = "voltmod/[~1.7]"
 
     default_options = {

@@ -5,7 +5,7 @@ project(legacy-dummy LANGUAGES CXX)
 include(FetchContent)
 
 # Configured against the main build's Conan generators, so there is no second Conan install.
-find_package(hl2sdk-cs2 CONFIG REQUIRED)
+find_package(s2sdk CONFIG REQUIRED)
 
 # Build 1411, the last Metamod before KHook: plugin API 17 and SourceHook, as the legacy plugins use.
 FetchContent_Declare(metamod
@@ -19,8 +19,8 @@ target_include_directories(legacy_dummy PRIVATE
     "${metamod_SOURCE_DIR}/core"
     "${metamod_SOURCE_DIR}/core/sourcehook"
 )
-target_link_libraries(legacy_dummy PRIVATE VoltMod::HL2SDK)
-hl2sdk_attach_plugin_support(legacy_dummy)
+target_link_libraries(legacy_dummy PRIVATE VoltMod::S2SDK)
+s2sdk_attach_plugin_support(legacy_dummy)
 
 # Metamod loads addons/legacy_dummy/bin/<platform>/legacy_dummy.{dll,so}, with no lib prefix.
 set_target_properties(legacy_dummy PROPERTIES

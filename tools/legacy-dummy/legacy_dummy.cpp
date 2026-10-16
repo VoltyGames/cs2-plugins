@@ -1,5 +1,6 @@
 #include <ISmmPlugin.h>
-#include <eiface.h>
+
+#include <engine2/isource2server.h>
 
 // Stands in for the partner's legacy plugins: SourceHook hooks on the engine functions VoltMod also hooks.
 class LegacyDummy final : public ISmmPlugin
@@ -11,7 +12,10 @@ public:
 
     const char* GetAuthor() override { return "meat.gg"; }
     const char* GetName() override { return "Legacy Dummy"; }
-    const char* GetDescription() override { return "Counts SourceHook calls on GameFrame, ClientCommand and ClientPutInServer"; }
+    const char* GetDescription() override
+    {
+        return "Counts SourceHook calls on GameFrame, ClientCommand and ClientPutInServer";
+    }
     const char* GetURL() override { return ""; }
     const char* GetLicense() override { return "Public Domain"; }
     const char* GetVersion() override { return "1.0.0"; }
@@ -52,7 +56,8 @@ bool LegacyDummy::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, b
 
     SH_ADD_HOOK(IServerGameDLL, GameFrame, _server, SH_MEMBER(this, &LegacyDummy::OnGameFrame), true);
     SH_ADD_HOOK(IServerGameClients, ClientCommand, _gameClients, SH_MEMBER(this, &LegacyDummy::OnClientCommand), false);
-    SH_ADD_HOOK(IServerGameClients, ClientPutInServer, _gameClients, SH_MEMBER(this, &LegacyDummy::OnClientPutInServer), true);
+    SH_ADD_HOOK(IServerGameClients, ClientPutInServer, _gameClients, SH_MEMBER(this, &LegacyDummy::OnClientPutInServer),
+                true);
 
     META_CONVAR_REGISTER(FCVAR_RELEASE | FCVAR_GAMEDLL);
     META_CONPRINTF("[LEGACY_DUMMY] Loaded on plugin API %d\n", METAMOD_PLAPI_VERSION);
@@ -62,8 +67,10 @@ bool LegacyDummy::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen, b
 bool LegacyDummy::Unload(char* error, size_t maxlen)
 {
     SH_REMOVE_HOOK(IServerGameDLL, GameFrame, _server, SH_MEMBER(this, &LegacyDummy::OnGameFrame), true);
-    SH_REMOVE_HOOK(IServerGameClients, ClientCommand, _gameClients, SH_MEMBER(this, &LegacyDummy::OnClientCommand), false);
-    SH_REMOVE_HOOK(IServerGameClients, ClientPutInServer, _gameClients, SH_MEMBER(this, &LegacyDummy::OnClientPutInServer), true);
+    SH_REMOVE_HOOK(IServerGameClients, ClientCommand, _gameClients, SH_MEMBER(this, &LegacyDummy::OnClientCommand),
+                   false);
+    SH_REMOVE_HOOK(IServerGameClients, ClientPutInServer, _gameClients,
+                   SH_MEMBER(this, &LegacyDummy::OnClientPutInServer), true);
 
     META_CONPRINTF("[LEGACY_DUMMY] Unloaded\n");
     return true;
@@ -71,8 +78,8 @@ bool LegacyDummy::Unload(char* error, size_t maxlen)
 
 void LegacyDummy::PrintCounts() const
 {
-    META_CONPRINTF("[LEGACY_DUMMY] GameFrame %llu, ClientCommand %llu, ClientPutInServer %llu\n",
-        _gameFrames, _clientCommands, _clientsPutInServer);
+    META_CONPRINTF("[LEGACY_DUMMY] GameFrame %llu, ClientCommand %llu, ClientPutInServer %llu\n", _gameFrames,
+                   _clientCommands, _clientsPutInServer);
 }
 
 void LegacyDummy::OnGameFrame(bool simulating, bool firstTick, bool lastTick)
