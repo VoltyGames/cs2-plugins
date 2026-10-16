@@ -11,6 +11,7 @@
 #include <VoltMod/Events/EventTypes.hpp>
 #include <VoltMod/Unsafe/Hook.hpp>
 #include <algorithm>
+#include <engine2/ivengineserver2.h>
 #include <string>
 #include <utility>
 
@@ -24,9 +25,9 @@ namespace AdminSystem
 
 /** Keeps a voice-muted sender from being heard: the engine runs with listening off. */
 static VoltMod::HookResult<bool> SilenceMuted(VoltMod::PlayerManager& players,
-                                             const Punishments::PunishmentManager& punishments,
-                                             Core::PlayerChat& chat, IVEngineServer2& engine, CPlayerSlot receiver,
-                                             CPlayerSlot sender, bool listen)
+                                              const Punishments::PunishmentManager& punishments, Core::PlayerChat& chat,
+                                              IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender,
+                                              bool listen)
 {
     if (!listen)
     {

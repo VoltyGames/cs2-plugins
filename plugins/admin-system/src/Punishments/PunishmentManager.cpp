@@ -10,6 +10,7 @@
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
+#include <engine2/ivengineserver2.h>
 #include <utility>
 
 using AdminSystem::Database::Punishment;
