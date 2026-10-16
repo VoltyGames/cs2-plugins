@@ -11,7 +11,7 @@ class CS2PluginsConan(ConanFile):
     settings: Any = "os", "compiler", "build_type", "arch"
 
     # VoltMod supplies cpr, glaze, sqlpp23 and its connectors, s2sdk, and KHook transitively.
-    requires = "voltmod/[~1.7]"
+    requires = "voltmod/[~1.8]"
 
     default_options = {
         "*:shared": False,
