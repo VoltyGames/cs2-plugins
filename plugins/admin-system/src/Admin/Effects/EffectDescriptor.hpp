@@ -34,7 +34,7 @@ struct EffectChoice
  */
 struct EffectDescriptor
 {
-    std::string Permission;    /**< Permission token; "" skips the check. */
+    std::string Permission; /**< Permission token; "" skips the check. */
     EffectId Id;
     std::string NameKey;       /**< Translation key for the menu row label. */
     std::string OnKey;         /**< Broadcast key when applied ("" = silent). */

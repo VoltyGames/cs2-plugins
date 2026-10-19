@@ -82,7 +82,8 @@ public:
      * running `instance.OnStop`. The now-inactive slot entry is reclaimed lazily on the next
      * Apply/Cancel for that id.
      */
-    void Apply(int slot, EffectId effectId, EffectInstance instance, EffectScope scope, int tickIntervalMs, int durationMs);
+    void Apply(int slot, EffectId effectId, EffectInstance instance, EffectScope scope, int tickIntervalMs,
+               int durationMs);
 
     void Cancel(int slot, EffectId effectId);
     /** Cancel every active effect on @p slot. */

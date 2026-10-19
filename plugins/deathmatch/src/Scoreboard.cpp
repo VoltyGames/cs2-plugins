@@ -17,9 +17,8 @@ Scoreboard::Scoreboard(VoltMod::Runtime& runtime) : _runtime(runtime)
         }
     });
     // The game adds its points after the death event, so the score is set a tick later.
-    _subs.Add(_runtime.GameEvents.On<VoltMod::PlayerDeath>([this](const VoltMod::PlayerDeath&) {
-        _pendingSync = _runtime.Scheduler.NextTick([this] { SyncScores(); });
-    }));
+    _subs.Add(_runtime.GameEvents.On<VoltMod::PlayerDeath>(
+        [this](const VoltMod::PlayerDeath&) { _pendingSync = _runtime.Scheduler.NextTick([this] { SyncScores(); }); }));
 }
 
 void Scoreboard::SyncScores()
