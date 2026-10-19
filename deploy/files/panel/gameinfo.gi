@@ -130,6 +130,9 @@
 		}
 		"r_add_views_in_pre_output"		"1"
 
+		// Limits
+		"sv_recvbuf_messages" "500"
+
 		// Nav fixups
 		"nav_path_fixup_climb_up_segments" "1"
 		"nav_gen_agent_radius_buffer" "0.75"
@@ -584,6 +587,7 @@
 			"game" "Forward"
 			"game" "GBuffer" // For Particle Shadows
 			"game" "FirstpersonLegsPrepass"
+			"game" "SkyOccluder"
 
 			"dev" "ToolsShadingComplexity"
 			"dev" "ToolsVis" // Visualization modes for all shaders (lighting only, normal maps only, etc.)
