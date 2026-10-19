@@ -24,7 +24,7 @@ commands:
               ca-certificates ccache curl gcc-14-monolithic git ninja-build
             rm -rf /var/lib/apt/lists/*
             curl -LsSf https://astral.sh/uv/install.sh | sh
-            "$HOME/.local/bin/uv" venv --python 3.14 "$HOME/.voltmod"
+            "$HOME/.local/bin/uv" venv --python 3.15 "$HOME/.voltmod"
             "$HOME/.local/bin/uv" pip install --python "$HOME/.voltmod/bin/python" --no-cache \
               "voltmod @ git+https://github.com/VoltyGames/voltmod.git@$VOLTMOD_REF"
             echo 'export PATH="$HOME/.voltmod/bin:$HOME/.local/bin:$PATH"' >> "$BASH_ENV"

@@ -3,23 +3,23 @@ name = "cs2-plugins"
 version = "1.0.0"
 description = "CS2 plugin monorepo build tools"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 license = { text = "MIT" }
 
 dependencies = [
     "voltmod @ git+https://github.com/VoltyGames/voltmod.git@main",
-    "ruff>=0.14.0",
-    "poethepoet>=0.47.0",
+    "ruff>=0.17.1",
+    "poethepoet>=0.49.0",
 ]
 
 # CI installs only this group to package and deploy: uv run --only-group deploy
 [dependency-groups]
 deploy = [
     "httpx>=0.28.1",
-    "pydantic>=2.12.0",
-    "python-dotenv>=1.2.0",
-    "pyyaml>=6.0",
-    "typer>=0.27.1",
+    "pydantic>=2.14.1",
+    "python-dotenv>=1.2.4",
+    "pyyaml>=6.0.3",
+    "typer>=0.27.3",
 ]
 
 [tool.uv]
@@ -60,7 +60,7 @@ sequence = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py314"
+target-version = "py315"
 extend-exclude = ["voltmod", "references"]
 
 [tool.ruff.lint]

@@ -5,7 +5,7 @@ layer through Conan.
 
 ## Set up
 
-Install Python 3.14+, uv, and a C++23 compiler:
+Install Python 3.15+, uv, and a C++23 compiler:
 
 ```powershell
 git clone https://github.com/VoltyGames/cs2-plugins.git

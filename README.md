@@ -42,7 +42,7 @@ The anticheat starts in `observe` mode; read its guide before changing the rollo
 
 ## Build from source
 
-Local Windows development requires Git, [uv](https://docs.astral.sh/uv/), Python 3.14 or newer,
+Local Windows development requires Git, [uv](https://docs.astral.sh/uv/), Python 3.15 or newer,
 Visual Studio 2022 or newer with the C++ workload, and a local CS2 dedicated server.
 
 ```powershell

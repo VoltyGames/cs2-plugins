@@ -14,7 +14,7 @@ admin-system's permissions and database see [Admin system](admin-system.md).
 ## Toolchain
 
 `uv sync` installs the CMake, Conan, Ninja and clang-format versions VoltMod pins, so nothing has
-to be installed globally. You need Python 3.14+, uv, and Visual Studio 2022 or newer with the C++
+to be installed globally. You need Python 3.15+, uv, and Visual Studio 2022 or newer with the C++
 workload. `uv run poe doctor` reports what is missing; it only reads.
 
 Compiling needs MSVC on `PATH`, which the Bash shell does not have. Load a VS developer shell

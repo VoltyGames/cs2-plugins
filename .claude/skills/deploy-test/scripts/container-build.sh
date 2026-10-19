@@ -9,7 +9,7 @@ cd /work
 git config --global --add safe.directory '*'
 
 # The checkout's own CLI, so it matches the framework it builds.
-uv venv --quiet --allow-existing --python 3.14 /cache/venv
+uv venv --quiet --allow-existing --python 3.15 /cache/venv
 uv pip install --quiet --python /cache/venv/bin/python --reinstall-package voltmod /work/voltmod
 export PATH="/cache/venv/bin:$PATH"
 
