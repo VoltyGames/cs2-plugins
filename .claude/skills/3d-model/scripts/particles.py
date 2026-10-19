@@ -17,7 +17,7 @@ import sys
 from functools import cache
 from pathlib import Path
 
-from dotenv import dotenv_values
+lazy from dotenv import dotenv_values
 
 ROOT = Path(__file__).resolve().parents[4]
 SCHEMA = ROOT / "references/swiftlys2/managed/src/SwiftlyS2.Generated/Schemas"
@@ -45,12 +45,12 @@ def schema():
         raise FileNotFoundError(f"no schema dump at {SCHEMA}")
     bases, properties, keys = {}, {}, set()
     for path in (SCHEMA / "Interfaces").glob("*.cs"):
-        text = path.read_text(encoding="utf-8", errors="ignore")
+        text = path.read_text(errors="ignore")
         if found := re.search(r"interface (\w+)\s*:\s*(\w+)", text):
             bases[found.group(1)] = found.group(2)
             properties[found.group(1)] = PROPERTY.findall(text)
     for path in (SCHEMA / "Classes").glob("*Impl.cs"):
-        text = path.read_text(encoding="utf-8", errors="ignore")
+        text = path.read_text(errors="ignore")
         keys.update(int(k, 16) for k in re.findall(r"GetOffset\(0x([0-9A-Fa-f]+)\)", text))
     return bases, properties, keys
 
@@ -151,7 +151,7 @@ def check(paths):
     """(file, where, class, field) for every unknown field in the .vpcf files at `paths`."""
     problems = []
     for path in map(Path, paths):
-        tree = parse(path.read_text(encoding="utf-8"))
+        tree = parse(path.read_text())
         problems += [(path, *found) for found in unknown(tree, "", "root")]
     return problems
 

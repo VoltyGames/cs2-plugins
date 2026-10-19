@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT))
 
 from dotenv import dotenv_values  # noqa: E402
-from voltmod.server.cs2_server import Cs2Server  # noqa: E402
+lazy from voltmod.server.cs2_server import Cs2Server  # noqa: E402
 
 from deploy.rcon import RconClient  # noqa: E402
 
@@ -49,7 +49,7 @@ def start(settings: dict[str, str | None], port: int) -> str:
     detached = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
     subprocess.Popen(command, cwd=server.executable.parent, creationflags=detached)
     # The engine writes the log under the first Game path, which is Metamod's when it is installed.
-    gameinfo = (server.game_dir / "gameinfo.gi").read_text(encoding="utf-8", errors="replace")
+    gameinfo = (server.game_dir / "gameinfo.gi").read_text(errors="replace")
     log_dir = "metamod" if "csgo/addons/metamod" in gameinfo else "voltmod"
     print(f"started; log: {server.game_dir / 'addons' / log_dir / 'console.log'}", flush=True)
     deadline = time.monotonic() + BOOT_TIMEOUT

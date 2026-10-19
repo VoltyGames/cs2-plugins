@@ -292,7 +292,7 @@ deploy/
 ```
 
 A new server kind is a model in `config/servers.py`, a package with a `Deployer` subclass, and one
-entry in `DEPLOYERS` in `cli.py`.
+branch in `create_deployer` in `cli.py`.
 
 ## Troubleshooting
 

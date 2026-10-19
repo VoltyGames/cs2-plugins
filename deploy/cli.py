@@ -12,13 +12,16 @@ from typing import Annotated, Any
 import typer
 
 from deploy import console
-from deploy.bundle.builder import AddonsBuilder
-from deploy.bundle.packager import AddonPackager
-from deploy.config.inventory import Inventory
-from deploy.deployer import Deployer
-from deploy.docker.deployer import DockerDeployer
 from deploy.errors import DeployError
-from deploy.panel.deployer import PanelDeployer
+
+# Lazy, so --help skips pydantic, PyYAML and httpx.
+lazy from deploy.bundle.builder import AddonsBuilder
+lazy from deploy.bundle.packager import AddonPackager
+lazy from deploy.config.inventory import Inventory
+lazy from deploy.config.servers import DockerServer, PanelServer
+lazy from deploy.deployer import Deployer
+lazy from deploy.docker.deployer import DockerDeployer
+lazy from deploy.panel.deployer import PanelDeployer
 
 app = typer.Typer(help=__doc__, no_args_is_help=True, pretty_exceptions_enable=False)
 
@@ -30,23 +33,25 @@ PluginsArgument = Annotated[
     list[str] | None, typer.Argument(help="Plugins to package; default: every inventory plugin")
 ]
 
-DEPLOYERS: dict[str, type[Deployer[Any]]] = {"docker": DockerDeployer, "panel": PanelDeployer}
+
+def create_deployer(
+    inventory: Inventory, server: DockerServer | PanelServer, dry_run: bool
+) -> Deployer[Any]:
+    if isinstance(server, DockerServer):
+        return DockerDeployer(inventory, server, dry_run=dry_run)
+    return PanelDeployer(inventory, server, dry_run=dry_run)
 
 
 def deployers_for(server_id: str | None, dry_run: bool = False) -> list[Deployer[Any]]:
     """Deployers for the named server, or for every enabled one."""
     inventory = Inventory.load()
-    return [
-        DEPLOYERS[server.kind](inventory, server, dry_run=dry_run)
-        for server in inventory.targets(server_id)
-    ]
+    return [create_deployer(inventory, server, dry_run) for server in inventory.targets(server_id)]
 
 
 def deployer_for(server_id: str | None, dry_run: bool = False) -> Deployer[Any]:
     """The named server's deployer, or the only enabled server's."""
     inventory = Inventory.load()
-    server = inventory.target(server_id)
-    return DEPLOYERS[server.kind](inventory, server, dry_run=dry_run)
+    return create_deployer(inventory, inventory.target(server_id), dry_run)
 
 
 @app.command("ci-matrix")

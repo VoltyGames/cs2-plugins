@@ -22,7 +22,7 @@ def git(*args: str) -> str:
 
 def locked_references() -> list[str]:
     """Every `name/version#revision` conan.lock pins, across its requires sections."""
-    lock = json.loads((ROOT / "conan.lock").read_text(encoding="utf-8"))
+    lock = json.loads((ROOT / "conan.lock").read_text())
     pins = [item for value in lock.values() if isinstance(value, list) for item in value]
     return [pin.split("%")[0] for pin in pins]
 

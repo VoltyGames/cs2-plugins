@@ -41,7 +41,7 @@ class SettingsRenderer:
     def _read_jsonc(self, path: Path) -> Any:
         if not path.is_file():
             raise DeployError(f"no plugin settings at {path.relative_to(ROOT).as_posix()}")
-        text = self.COMMENT_OR_STRING.sub(self._keep_strings, path.read_text(encoding="utf-8"))
+        text = self.COMMENT_OR_STRING.sub(self._keep_strings, path.read_text())
         return json.loads(text)
 
     @staticmethod

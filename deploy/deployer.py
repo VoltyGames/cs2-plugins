@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import AbstractContextManager, contextmanager
 
 from deploy import console
@@ -49,7 +49,7 @@ class Deployer[S: Server](ABC):
             console.item(detail)
 
     @contextmanager
-    def rcon(self, instance_name: str | None) -> Iterator[RconClient]:
+    def rcon(self, instance_name: str | None) -> Generator[RconClient]:
         instance = self.server.instance(instance_name)
         password = self.secrets.require("RCON_PASSWORD")
         with (

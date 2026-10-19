@@ -48,7 +48,7 @@ class AddonsBuilder:
         shutil.copytree(ROOT / "plugins" / plugin / "configs", configs, dirs_exist_ok=True)
         settings = self._settings.render(instance, plugin)
         text = json.dumps(settings, indent=2, ensure_ascii=False) + "\n"
-        (configs / "settings.jsonc").write_text(text, encoding="utf-8", newline="\n")
+        (configs / "settings.jsonc").write_text(text, newline="\n")
 
     @staticmethod
     def _unpack(name: str, addons: Path) -> None:

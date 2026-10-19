@@ -23,7 +23,7 @@ class ComposeProject:
         self._image = image
 
     def render(self, destination: Path) -> None:
-        hook_text = self.PRE_LAUNCH_HOOK.read_text(encoding="utf-8")
+        hook_text = self.PRE_LAUNCH_HOOK.read_text()
         for instance in self._server.instances:
             instance_dir = destination / "instances" / instance.name
             self._addons.build(instance, instance_dir / "bundles")
@@ -31,13 +31,13 @@ class ComposeProject:
             hook = instance_dir / "pre.sh"
             self._write(hook, hook_text)
             hook.chmod(0o755)
-        compose_text = self.COMPOSE_FILE.read_text(encoding="utf-8")
+        compose_text = self.COMPOSE_FILE.read_text()
         self._write(destination / self.COMPOSE_FILE.name, compose_text)
 
     @staticmethod
     def _write(path: Path, text: str) -> None:
         """The host reads these files, so they keep LF endings whatever the renderer runs on."""
-        path.write_text(text, encoding="utf-8", newline="\n")
+        path.write_text(text, newline="\n")
 
     def _env_file(self, instance: Instance) -> str:
         token = self._secrets.get(f"GSLT_{instance.name}")

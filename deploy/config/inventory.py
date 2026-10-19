@@ -36,7 +36,7 @@ class Inventory(Model):
     @classmethod
     def load(cls) -> Self:
         try:
-            return cls.model_validate(yaml.safe_load(cls.PATH.read_text(encoding="utf-8")))
+            return cls.model_validate(yaml.safe_load(cls.PATH.read_text()))
         except ValidationError as error:
             raise DeployError(f"{cls.PATH.name} is invalid:\n{error}") from None
 
