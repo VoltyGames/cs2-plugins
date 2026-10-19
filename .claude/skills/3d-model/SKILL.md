@@ -48,10 +48,13 @@ Then load the kit in Blender:
 
 ```python
 import sys
+
 sys.path.insert(0, r"<repo>/.claude/skills/3d-model/scripts")
 import modelkit
+
 modelkit.reload()
 from modelkit import session, surfaces, shapes, objects, rig, preview, source2, modeldoc
+
 result = session.status()
 ```
 
@@ -170,8 +173,9 @@ frames between keys without overshoot. `source2.remember` saves the export setti
 ## 8. Export and compile
 
 ```python
-source2.export(scene, model_dir)                        # meshes, hull, one DMX per action
-source2.save_blend(scenes, model_dir + "/<folder>.blend")  # every part's scene; Git LFS, not the compile
+source2.export(scene, model_dir)  # meshes, hull, one DMX per action
+# every part's scene; Git LFS, not the compile
+source2.save_blend(scenes, model_dir + "/<folder>.blend")
 modeldoc.write_vmat(...)  # only for new or changed materials
 modeldoc.write_vmdl(...)  # only when meshes, animations, groups or attachments change
 ```
