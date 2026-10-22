@@ -22,7 +22,8 @@
     "**/objdir": true,
     "**/.vs": true,
     "**/__pycache__": true,
-    "**/.mypy_cache": true
+    "**/.mypy_cache": true,
+    ".VSCodeCounter": true
   },
   "search.exclude": {
     "**/references": true
