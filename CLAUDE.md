@@ -52,7 +52,6 @@ plugins/main-menu/     !menu hub; owns the meat.gg Panorama brand kit (panorama/
 contracts/             Interfaces shared between plugins (header-only, not a plugin)
 deploy/                Deploy CLI for panel servers and Docker hosts
 workshop/              Builds the meatgg workshop addon; meatgg/ holds compiled files copied in as they are
-tools/                 Standalone builds outside the root CMake; legacy-dummy/ stands in for a legacy Metamod plugin
 docs/                  Development and deployment notes
 ```
 
