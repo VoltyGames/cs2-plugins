@@ -28,7 +28,7 @@ enum class PanelState
     Generic,       // no URL and nothing pending
 };
 
-static PanelState PanelStateFor(const PendingCheck& pc)
+static PanelState ToPanelState(const PendingCheck& pc)
 {
     if (pc.SuspectJoined)
     {
@@ -61,7 +61,7 @@ std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
     int64_t remain = pc.DeadlineSec - Time::Now();
     int remainSec = remain > 0 ? static_cast<int>(remain) : 0;
 
-    const PanelState state = PanelStateFor(pc);
+    const PanelState state = ToPanelState(pc);
 
     std::string body;
     switch (state)
@@ -117,7 +117,7 @@ void CheatCheckView::SendInstructions(int slot, const PendingCheck& pc) const
 
     _chat.Reply(slot, std::format("{}{}", ChatColors::Red, tr.Get("cheatCheck.panelTitle", slot)));
 
-    switch (PanelStateFor(pc))
+    switch (ToPanelState(pc))
     {
     case PanelState::Joined:
         _chat.Reply(slot, std::format("{}{}", ChatColors::Green, tr.Get("cheatCheck.joinedPanel", slot)));

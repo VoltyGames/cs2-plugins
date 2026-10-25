@@ -21,7 +21,7 @@ std::shared_ptr<VoltMod::Menu> BuildSwapPartnerPicker(const MenuContext& ctx, Vo
                              {.Title = ctx.Translate("common.selectSwapTarget"),
                               .Pick =
                                   [&app, adminSlot, first](VoltMod::PlayerRef second) {
-                                      Actions::Swap(app, app.Runtime.Players.RefFor(adminSlot), first, second);
+                                      Actions::Swap(app, app.Runtime.Players.GetRef(adminSlot), first, second);
                                       app.Runtime.Menus.CloseAll(adminSlot);
                                   },
                               .Enabled =

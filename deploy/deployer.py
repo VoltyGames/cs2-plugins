@@ -43,7 +43,7 @@ class Deployer[S: Server](ABC):
         """What `action` covers: each instance with its plugins, then the server kind's details."""
         console.section(f"{action} {self.server.id}")
         for instance in self.server.instances:
-            plugins = " ".join(self.server.plugins_for(instance)) or "<none>"
+            plugins = " ".join(self.server.list_plugins(instance)) or "<none>"
             console.item(f"{instance.name} (port {instance.port}): {plugins}")
         for detail in details:
             console.item(detail)

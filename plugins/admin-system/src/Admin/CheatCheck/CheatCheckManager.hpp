@@ -55,7 +55,7 @@ public:
     SubmitResult SubmitPlayerLink(int callerSlot, const std::string& link);
 
     /** Remove a disconnecting slot without unfreezing or broadcasting. */
-    void CancelAllForSlot(int slot);
+    void Forget(int slot);
 
     /** Remove every active check during plugin unload. */
     void CancelAll();

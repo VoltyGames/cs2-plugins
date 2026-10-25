@@ -22,8 +22,8 @@
 #include <utility>
 #include <vector>
 
-using AdminSystem::Punishments::InfoFor;
 using AdminSystem::Punishments::IssuePunishment;
+using AdminSystem::Punishments::LookUp;
 using AdminSystem::Punishments::PunishType;
 
 namespace AdminSystem::Admin::Menu
@@ -39,8 +39,8 @@ using PunishFlowT = VoltMod::Flow<PendingPunishment>;
 bool CanStillPunish(App& app, int adminSlot, VoltMod::PlayerRef target, PunishType type)
 {
     auto& players = app.Runtime.Players;
-    const VoltMod::PlayerRef admin = players.RefFor(adminSlot);
-    if (!app.Runtime.Policy.Authorize(admin, target, InfoFor(type).RequiredPermission).has_value())
+    const VoltMod::PlayerRef admin = players.GetRef(adminSlot);
+    if (!app.Runtime.Policy.Authorize(admin, target, LookUp(type).RequiredPermission).has_value())
     {
         return false;
     }
@@ -101,7 +101,7 @@ static PunishFlowT::Ptr MakeBaseFlow(App& app, int adminSlot, PendingPunishment 
                            auto* target = app.Runtime.Players.Get(p.Target);
                            rows.Add(translations.Get("punish.target", adminSlot),
                                     target ? target->Name() : std::string())
-                               .AddIf(InfoFor(p.Type).Timed, translations.Get("punish.duration", adminSlot),
+                               .AddIf(LookUp(p.Type).Timed, translations.Get("punish.duration", adminSlot),
                                       DurationLabel(translations, p.DurationSec, adminSlot))
                                .Add(translations.Get("punish.reason", adminSlot), Strings::TruncateUtf8(p.Reason, 40));
                        }})
@@ -136,7 +136,7 @@ void StartPunishFlow(AdminSystem::App& app, int adminSlot, PendingPunishment pen
                            .Set = [](PendingPunishment& p, int seconds) { p.DurationSec = seconds; },
                            .CustomLabel = translations.Get("duration.custom", adminSlot),
                            .CustomPrompt = translations.Get("duration.customPrompt", adminSlot),
-                           .Applies = [](const PendingPunishment& p) { return InfoFor(p.Type).Timed; }})
+                           .Applies = [](const PendingPunishment& p) { return LookUp(p.Type).Timed; }})
         ->AddOptionsStep(
             {.Title = stepTitle("punish.selectReason"),
              .Options = std::move(reasons),

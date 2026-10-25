@@ -17,7 +17,7 @@ static constexpr std::string_view DefaultModelT = "characters/models/tm_phoenix/
 static constexpr std::string_view DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
 
 // Spectators and unassigned players have no restore model; SetModel ignores the empty view.
-static std::string_view DefaultModelForTeam(VoltMod::Team team)
+static std::string_view FindDefaultModel(VoltMod::Team team)
 {
     if (team == VoltMod::Team::T)
     {
@@ -83,7 +83,7 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                           const Pawn pawn = entities.Pawn(targetSlot);
                           if (pawn.IsAlive())
                           {
-                              pawn.SetModel(DefaultModelForTeam(pawn.TeamNum()));
+                              pawn.SetModel(FindDefaultModel(pawn.TeamNum()));
                           }
                       }};
                   }};

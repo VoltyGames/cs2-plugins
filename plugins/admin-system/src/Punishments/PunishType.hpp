@@ -55,7 +55,7 @@ static_assert(
     "PunishTypes rows must follow the PunishType declaration order");
 
 /** The row describing @p type. */
-inline const PunishTypeInfo& InfoFor(PunishType type)
+inline const PunishTypeInfo& LookUp(PunishType type)
 {
     return PunishTypes[VoltMod::EnumIndex(type)];
 }

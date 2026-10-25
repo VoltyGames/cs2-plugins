@@ -176,7 +176,7 @@ inline constexpr std::array<TabSpec, 6> Tabs{{
 }};
 
 /** The tab @p id describes. MenuCatalogTests pins @ref Tabs in enum order. */
-inline constexpr const TabSpec& TabFor(TabId id)
+inline constexpr const TabSpec& FindTab(TabId id)
 {
     return Tabs[static_cast<std::size_t>(id)];
 }

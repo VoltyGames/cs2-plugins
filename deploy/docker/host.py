@@ -35,11 +35,11 @@ class DockerHost:
     def recreate(self, instance: Instance) -> None:
         """Start the instance in a new container even when nothing changed, so pre.sh runs."""
         self._compose(instance, "up -d --force-recreate")
-        self._wait_for_steamcmd(instance)
+        self._await_steamcmd(instance)
 
     def restart(self, instance: Instance) -> None:
         self._compose(instance, "restart")
-        self._wait_for_steamcmd(instance)
+        self._await_steamcmd(instance)
 
     def check_running(self) -> None:
         # One query for every instance: each Compose project would be its own SSH round trip.
@@ -98,7 +98,7 @@ class DockerHost:
         compose = f"docker compose -p {project} --env-file {env_file}"
         return f"cd {self._root} && {compose} {arguments}"
 
-    def _wait_for_steamcmd(self, instance: Instance) -> None:
+    def _await_steamcmd(self, instance: Instance) -> None:
         """Block while SteamCMD runs in the instance's container, so updates go one at a time."""
         waiting = shlex.quote(f"    {instance.name}: SteamCMD still running")
         limit = self.STEAMCMD_TIMEOUT_MINUTES * 60

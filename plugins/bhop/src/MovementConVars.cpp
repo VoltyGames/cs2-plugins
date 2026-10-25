@@ -87,11 +87,11 @@ void MovementConVars::ReplicateOverrides(int slot)
 {
     for (auto& entry : _flags)
     {
-        entry.Cvar.SetFor(slot, entry.Value);
+        entry.Cvar.SendTo(slot, entry.Value);
     }
     for (auto& entry : _numbers)
     {
-        entry.Cvar.SetFor(slot, entry.Value);
+        entry.Cvar.SendTo(slot, entry.Value);
     }
 }
 
@@ -99,11 +99,11 @@ void MovementConVars::ReplicateServerValues(int slot)
 {
     for (auto& entry : _flags)
     {
-        entry.Cvar.SetFor(slot, entry.Cvar.Get());
+        entry.Cvar.SendTo(slot, entry.Cvar.Get());
     }
     for (auto& entry : _numbers)
     {
-        entry.Cvar.SetFor(slot, entry.Cvar.Get());
+        entry.Cvar.SendTo(slot, entry.Cvar.Get());
     }
 }
 

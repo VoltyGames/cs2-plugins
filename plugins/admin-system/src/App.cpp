@@ -112,7 +112,7 @@ void App::OnPlayerDisconnect(Player& player)
 {
     Repos.Players.RecordDisconnectAsync(player.SteamId(), player.Name(), player.Playtime().count());
     Effects.CancelAll(player.Slot());
-    CheatCheck.CancelAllForSlot(player.Slot());
+    CheatCheck.Forget(player.Slot());
 }
 
 Status App::ConnectDatabase()

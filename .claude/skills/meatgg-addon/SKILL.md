@@ -51,8 +51,8 @@ folder that holds a source:
 
 ```bash
 cd plugins/stronghold/content
-folders=$(find . -type f \( -name '*.vmdl' -o -name '*.vpcf' -o -name '*.vsndevts' -o -name '*.vdata' \) \
-  -exec dirname {} \; | sort -u | sed 's|^\./||')
+folders=$(find . -type f \( -name '*.vmdl' -o -name '*.vpcf' -o -name '*.vsndevts' -o -name '*.vdata' \
+  -o -name '*.wav' -o -name '*.mp3' \) -exec dirname {} \; | sort -u | sed 's|^\./||')
 cd ../../..
 for d in $folders; do
   .venv/Scripts/voltmod.exe content compile stronghold "$d" --install client > "$TEMP/compile_${d//\//_}.log" 2>&1 \

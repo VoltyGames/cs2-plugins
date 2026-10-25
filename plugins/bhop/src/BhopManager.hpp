@@ -21,7 +21,7 @@ namespace Bhop
  * "enabled" mode sets the configured movement convars through the engine path, so they replicate
  * to every client and the whole feature is client-predicted (ping-free). "grants" mode leaves the
  * server untouched and enables bhop per player: the client gets the convar values via
- * ConVar::SetFor (its prediction auto-jumps) while the server flips the same convars only
+ * ConVar::SendTo (its prediction auto-jumps) while the server flips the same convars only
  * around that player's RunCommand via the framework's Movement hook.
  */
 class BhopManager

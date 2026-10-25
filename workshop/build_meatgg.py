@@ -17,9 +17,9 @@ def main() -> None:
     """Rebuild the meatgg addon: every screen, Stronghold's content and this folder's meatgg/."""
     project = Project.load()
     client = find_client(Path(path) if (path := os.environ.get("CS2_CLIENT_PATH")) else None)
-    dirs = AddonDirs.of(client, "meatgg")
+    dirs = AddonDirs.locate(client, "meatgg")
     sources, meatgg = dirs.sources, dirs.compiled
-    stronghold = AddonDirs.of(client, "stronghold").compiled
+    stronghold = AddonDirs.locate(client, "stronghold").compiled
 
     if not stronghold.is_dir():
         raise SystemExit(f"no compiled stronghold addon at {stronghold}")

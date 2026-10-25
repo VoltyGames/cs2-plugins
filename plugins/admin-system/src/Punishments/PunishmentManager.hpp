@@ -74,10 +74,10 @@ private:
 
     /** Whether @p kind is cached: the timed kinds. A cache holds one row per player, which a warning
      *  breaks and a kick has none of, so those two are counted in the database instead. */
-    static bool IsCached(PunishType kind) { return InfoFor(kind).Timed; }
+    static bool IsCached(PunishType kind) { return LookUp(kind).Timed; }
 
-    Cache& CacheFor(PunishType kind) { return _active[VoltMod::EnumIndex(kind)]; }
-    const Cache& CacheFor(PunishType kind) const { return _active[VoltMod::EnumIndex(kind)]; }
+    Cache& GetCache(PunishType kind) { return _active[VoltMod::EnumIndex(kind)]; }
+    const Cache& GetCache(PunishType kind) const { return _active[VoltMod::EnumIndex(kind)]; }
 
     /** Lift the cached entry @p it points at: persist, drop it, refresh voice, broadcast. */
     void RemoveCached(PunishType kind, Cache::iterator it, int64_t removedBy, const std::string& reason);

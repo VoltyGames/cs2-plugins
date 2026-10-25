@@ -21,7 +21,7 @@ using VoltMod::MenuBuilder;
 using VoltMod::SubmenuRow;
 
 /** The punishment a catalog row issues. */
-static PunishType PunishTypeFor(RowId id)
+static PunishType ToPunishType(RowId id)
 {
     switch (id)
     {
@@ -73,7 +73,7 @@ std::shared_ptr<VoltMod::Menu> BuildPunishCard(const MenuContext& ctx, VoltMod::
     }
 
     AppendCatalogRows(ctx, builder, PunishCardRows, [&](const RowSpec& spec) -> VoltMod::MenuItem {
-        const PunishType type = PunishTypeFor(spec.Id);
+        const PunishType type = ToPunishType(spec.Id);
         return ButtonRow{
             .Label = ctx.Translate(spec.LabelKey),
             .Activate = [&app, pending = PendingPunishment{.Type = type, .Target = targetRef}](

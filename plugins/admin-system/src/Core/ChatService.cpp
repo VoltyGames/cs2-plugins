@@ -81,7 +81,7 @@ void ChatService::NoPermission(int slot)
 }
 
 /** The colouring every broadcast shares, so no two lines disagree on the tag. */
-static AdminLineStyle StyleOf(const Config::ChatSettings& cfg)
+static AdminLineStyle BuildStyle(const Config::ChatSettings& cfg)
 {
     return {.Prefix = cfg.fallbackPrefix,
             .PrefixColor = ChatColors::ParseNamed(cfg.fallbackPrefixColor),
@@ -98,7 +98,7 @@ void ChatService::BroadcastPunishment(std::string_view actionKey, std::string_vi
         return;
     }
 
-    const AdminLineStyle style = StyleOf(_config.Get().chat);
+    const AdminLineStyle style = BuildStyle(_config.Get().chat);
 
     std::string durationSuffix;
     if (durationSec)
@@ -124,7 +124,7 @@ void ChatService::BroadcastAction(std::string_view translationKey, std::string_v
         return;
     }
 
-    const AdminLineStyle style = StyleOf(_config.Get().chat);
+    const AdminLineStyle style = BuildStyle(_config.Get().chat);
     auto phrase = BroadcastPhrase(translationKey);
     _rt.Messages.Broadcast(targetName.empty() ? FormatAdminLine(style, adminName, phrase)
                                               : FormatAdminLine(style, adminName, phrase, targetName));
@@ -139,7 +139,7 @@ void ChatService::BroadcastAction(std::string_view translationKey, std::string_v
     }
 
     _rt.Messages.Broadcast(
-        FormatAdminLine(StyleOf(_config.Get().chat), adminName, BroadcastPhrase(translationKey), nameTokens));
+        FormatAdminLine(BuildStyle(_config.Get().chat), adminName, BroadcastPhrase(translationKey), nameTokens));
 }
 
 std::string ChatService::BroadcastPhrase(std::string_view translationKey) const

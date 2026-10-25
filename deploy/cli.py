@@ -42,13 +42,13 @@ def create_deployer(
     return PanelDeployer(inventory, server, dry_run=dry_run)
 
 
-def deployers_for(server_id: str | None, dry_run: bool = False) -> list[Deployer[Any]]:
+def find_deployers(server_id: str | None, dry_run: bool = False) -> list[Deployer[Any]]:
     """Deployers for the named server, or for every enabled one."""
     inventory = Inventory.load()
     return [create_deployer(inventory, server, dry_run) for server in inventory.targets(server_id)]
 
 
-def deployer_for(server_id: str | None, dry_run: bool = False) -> Deployer[Any]:
+def find_deployer(server_id: str | None, dry_run: bool = False) -> Deployer[Any]:
     """The named server's deployer, or the only enabled server's."""
     inventory = Inventory.load()
     return create_deployer(inventory, inventory.target(server_id), dry_run)
@@ -78,14 +78,14 @@ def package(plugins: PluginsArgument = None) -> None:
 @app.command()
 def push(server: ServerOption = None, dry_run: DryRunOption = False) -> None:
     """Install plugins and settings, then restart the servers."""
-    for deployer in deployers_for(server, dry_run):
+    for deployer in find_deployers(server, dry_run):
         deployer.deploy()
 
 
 @app.command()
 def restart(server: ServerOption = None, dry_run: DryRunOption = False) -> None:
     """Restart servers so they install the latest CS2 build."""
-    for deployer in deployers_for(server, dry_run):
+    for deployer in find_deployers(server, dry_run):
         deployer.restart()
 
 
@@ -98,7 +98,7 @@ def cleanup(
     """Remove a Docker host's containers, deploy files, CS2 install and runtime images."""
     if not yes and not dry_run:
         raise DeployError("cleanup deletes the server's files; pass --yes, or --dry-run to preview")
-    deployer_for(server, dry_run).cleanup()
+    find_deployer(server, dry_run).cleanup()
 
 
 @app.command()
@@ -110,7 +110,7 @@ def rcon(
     ] = None,
 ) -> None:
     """Run console commands on a live instance."""
-    with deployer_for(server).rcon(instance) as client:
+    with find_deployer(server).rcon(instance) as client:
         for command in commands:
             console.section(command)
             if response := client.execute(command):
@@ -127,7 +127,7 @@ def tunnel(
     db_port: Annotated[int, typer.Option("--db-port", help="As seen from the host")] = 5432,
 ) -> None:
     """Forward a local port to a Docker host's database until Ctrl-C."""
-    deployer_for(server).tunnel_database(local_port, db_host, db_port)
+    find_deployer(server).tunnel_database(local_port, db_host, db_port)
 
 
 def main() -> None:

@@ -30,7 +30,7 @@ Address and password come from `deploy/inventory.yml` and `deploy/secrets/<id>/.
 optional with one enabled server and instance. Logs:
 
 - Panel server (no shell): the panel console, or
-  `deploy.cli.deployer_for('<id>').api.read('/game/logs/console_<date>.log')`.
+  `deploy.cli.find_deployer('<id>').api.read('/game/logs/console_<date>.log')`.
 - Docker host: `ssh -i <SSH_KEY_FILE> -o IdentitiesOnly=yes steam@<host>` (both in the inventory and
   `.env`), then `docker logs <server-id>-cs2-<instance>`. Binaries are under
   `/home/steam/cs2/deploy/instances/<instance>/bundles/addons/voltmod/plugins/<plugin>/`.

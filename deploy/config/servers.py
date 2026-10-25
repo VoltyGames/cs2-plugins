@@ -46,7 +46,7 @@ class Server(Model):
                 raise ValueError(f"server '{self.id}' has two instances with the same {field}")
         return self
 
-    def plugins_for(self, instance: Instance) -> list[str]:
+    def list_plugins(self, instance: Instance) -> list[str]:
         """The instance's own list replaces the server's; it does not extend it."""
         return self.plugins if instance.plugins is None else instance.plugins
 

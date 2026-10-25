@@ -55,7 +55,7 @@ class Inventory(Model):
         for server in self.servers:
             for instance in server.instances:
                 missing = [
-                    name for name in server.plugins_for(instance) if name not in self.plugins
+                    name for name in server.list_plugins(instance) if name not in self.plugins
                 ]
                 if missing:
                     raise ValueError(f"server '{server.id}' uses undeclared plugins: {missing}")
@@ -83,5 +83,5 @@ class Inventory(Model):
 
     def unused_plugins(self, server: Server, instance: Instance) -> list[str]:
         """Inventory plugins the instance does not run, which a deploy removes from the server."""
-        assigned = server.plugins_for(instance)
+        assigned = server.list_plugins(instance)
         return [name for name in self.plugins if name not in assigned]

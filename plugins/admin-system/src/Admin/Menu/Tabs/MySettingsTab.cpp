@@ -42,7 +42,7 @@ static const std::unordered_map<std::string_view, std::string_view>& ColorLabelK
 }
 
 // Empty means inherit from the group and maps to choice index zero.
-static int IndexForColor(std::string_view color)
+static int ToChoiceIndex(std::string_view color)
 {
     if (color.empty())
     {
@@ -131,7 +131,7 @@ static VoltMod::MenuItem ColorRow(const MenuContext& ctx, const RowSpec& spec, C
         .Label = ctx.Translate(spec.LabelKey),
         .Choices = std::move(choices),
         .Commit = [&app, steamId, slot](int, const std::string& value) { SaveColor(app, steamId, slot, value); },
-        .Index = IndexForColor(CurrentSlotColor(app, steamId, slot))}
+        .Index = ToChoiceIndex(CurrentSlotColor(app, steamId, slot))}
         .ToItem();
 }
 

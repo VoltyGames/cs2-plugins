@@ -69,8 +69,8 @@ bool PunishmentManager::LoadActivePunishments()
 {
     SwapCaches(_repos.Punishments.FindAllActive());
     Log::Info("Loaded active punishments: {} ban(s), {} voice mute(s), {} text mute(s).",
-              CacheFor(PunishType::Ban).size(), CacheFor(PunishType::VoiceMute).size(),
-              CacheFor(PunishType::TextMute).size());
+              GetCache(PunishType::Ban).size(), GetCache(PunishType::VoiceMute).size(),
+              GetCache(PunishType::TextMute).size());
     return true;
 }
 
@@ -81,7 +81,7 @@ PunishmentManager::ActivePage PunishmentManager::GetActive(std::span<const Punis
     std::vector<const Punishment*> matches;
     for (PunishType kind : kinds)
     {
-        const Cache& cache = CacheFor(kind);
+        const Cache& cache = GetCache(kind);
         matches.reserve(matches.size() + cache.size());
         for (const auto& [steamId, record] : cache)
         {
@@ -108,7 +108,7 @@ PunishmentManager::ActivePage PunishmentManager::GetActive(std::span<const Punis
 
 std::optional<Punishment> PunishmentManager::GetActive(PunishType kind, int64_t steamId)
 {
-    Cache& cache = CacheFor(kind);
+    Cache& cache = GetCache(kind);
     auto it = cache.find(steamId);
     if (it == cache.end())
     {
@@ -128,7 +128,7 @@ std::optional<Punishment> PunishmentManager::GetActive(PunishType kind, int64_t 
 
 bool PunishmentManager::IsPunished(PunishType kind, int64_t steamId) const
 {
-    return CacheFor(kind).contains(steamId);
+    return GetCache(kind).contains(steamId);
 }
 
 void PunishmentManager::Issue(Punishment& record)
@@ -144,7 +144,7 @@ void PunishmentManager::Issue(Punishment& record)
     {
         // Cache first so the punishment bites this frame; the id lands later, and only if
         // nothing has replaced the entry.
-        Cache& cache = CacheFor(record.Kind);
+        Cache& cache = GetCache(record.Kind);
         cache[record.TargetSteamId] = record;
         _repos.Punishments.CreateAsync(record, [&cache, steamId = record.TargetSteamId](int64_t id) {
             if (auto it = cache.find(steamId); it != cache.end() && it->second.Id == 0)
@@ -170,7 +170,7 @@ void PunishmentManager::Issue(Punishment& record)
         RefreshVoiceChannel(_rt, record.TargetSteamId, true);
     }
 
-    const PunishTypeInfo& info = InfoFor(record.Kind);
+    const PunishTypeInfo& info = LookUp(record.Kind);
     _chat.BroadcastPunishment(info.IssuedBroadcast, record.AdminName, record.TargetName, record.Reason,
                               info.Timed ? std::optional{record.Duration} : std::nullopt);
 
@@ -209,7 +209,7 @@ void PunishmentManager::EscalateWarning(const Punishment& warning)
 
 bool PunishmentManager::Remove(PunishType kind, int64_t recordId, int64_t removedBy, const std::string& reason)
 {
-    Cache& cache = CacheFor(kind);
+    Cache& cache = GetCache(kind);
     auto it = std::ranges::find_if(cache, [recordId](const auto& entry) { return entry.second.Id == recordId; });
     if (it == cache.end())
     {
@@ -223,7 +223,7 @@ bool PunishmentManager::Remove(PunishType kind, int64_t recordId, int64_t remove
 bool PunishmentManager::RemoveBySteamId(PunishType kind, int64_t steamId, int64_t removedBy, const std::string& reason)
 {
     // The caches mirror every active row, so a miss needs no database lookup.
-    Cache& cache = CacheFor(kind);
+    Cache& cache = GetCache(kind);
     auto it = cache.find(steamId);
     if (it == cache.end())
     {
@@ -247,11 +247,11 @@ void PunishmentManager::RemoveCached(PunishType kind, Cache::iterator it, int64_
 {
     const int64_t steamId = it->first;
     _repos.Punishments.RemoveAsync(it->second.Id, removedBy, reason);
-    _chat.BroadcastPunishment(InfoFor(kind).LiftedBroadcast, AdminDisplayName(removedBy), it->second.TargetName, reason,
+    _chat.BroadcastPunishment(LookUp(kind).LiftedBroadcast, AdminDisplayName(removedBy), it->second.TargetName, reason,
                               std::nullopt);
 
     // Erased before the refresh, which re-reads the cache through the listening hook.
-    CacheFor(kind).erase(it);
+    GetCache(kind).erase(it);
     if (kind == PunishType::VoiceMute)
     {
         RefreshVoiceChannel(_rt, steamId, false);
@@ -289,7 +289,7 @@ void PunishmentManager::RefreshCachesAsync()
 void PunishmentManager::SwapCaches(std::vector<Punishment> rows)
 {
     // Taken before the swap: voice mutes that expired this sweep still need a channel refresh.
-    const Cache previouslyVoiceMuted = std::exchange(CacheFor(PunishType::VoiceMute), {});
+    const Cache previouslyVoiceMuted = std::exchange(GetCache(PunishType::VoiceMute), {});
 
     for (Cache& cache : _active)
     {
@@ -299,11 +299,11 @@ void PunishmentManager::SwapCaches(std::vector<Punishment> rows)
     {
         if (IsCached(row.Kind))
         {
-            CacheFor(row.Kind)[row.TargetSteamId] = std::move(row);
+            GetCache(row.Kind)[row.TargetSteamId] = std::move(row);
         }
     }
 
-    const Cache& voiceMuted = CacheFor(PunishType::VoiceMute);
+    const Cache& voiceMuted = GetCache(PunishType::VoiceMute);
     for (const auto& [steamId, record] : previouslyVoiceMuted)
     {
         if (!voiceMuted.contains(steamId))

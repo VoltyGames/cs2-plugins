@@ -21,7 +21,7 @@ static void Issue(App& app, const Player& admin, const Player& target, PunishTyp
     if (type == PunishType::Kick)
     {
         app.Runtime.Entities.Controller(target.Slot()).Kick(reason);
-        app.Chat.BroadcastPunishment(InfoFor(type).IssuedBroadcast, admin.Name(), target.Name(), reason, std::nullopt);
+        app.Chat.BroadcastPunishment(LookUp(type).IssuedBroadcast, admin.Name(), target.Name(), reason, std::nullopt);
         return;
     }
 
@@ -32,7 +32,7 @@ static void Issue(App& app, const Player& admin, const Player& target, PunishTyp
                       .AdminSteamId = admin.SteamId(),
                       .AdminName = std::string(admin.Name()),
                       .Reason = reason,
-                      .Duration = InfoFor(type).Timed ? durationSec : 0};
+                      .Duration = LookUp(type).Timed ? durationSec : 0};
     app.Punishments.Issue(record);
 }
 
@@ -48,7 +48,7 @@ void IssuePunishment(App& app, const Player& admin, const Player& target, Punish
     // Audit + abuse-rate check for chat commands and the menu. The warning->ban escalation goes
     // through PunishmentManager instead, so it is deliberately not counted against the admin.
     auto detail = durationSec > 0 ? std::format("{}; {}s", reason, durationSec) : reason;
-    app.Freeze.RecordPunishment(admin.SteamId(), admin.Name(), InfoFor(type).AuditName, targetSteamId, targetName,
+    app.Freeze.RecordPunishment(admin.SteamId(), admin.Name(), LookUp(type).AuditName, targetSteamId, targetName,
                                 detail);
 }
 

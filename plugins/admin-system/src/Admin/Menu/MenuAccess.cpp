@@ -19,7 +19,7 @@ bool Visible(App& app, int adminSlot, const RowSpec& row)
     }
     if (row.Permission.empty())
     {
-        return app.Admins.IsAdmin(app.Runtime.Players.RefFor(adminSlot).SteamId);
+        return app.Admins.IsAdmin(app.Runtime.Players.GetRef(adminSlot).SteamId);
     }
     return MayUse(app, adminSlot, row.Permission);
 }

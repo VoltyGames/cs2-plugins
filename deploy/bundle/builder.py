@@ -37,7 +37,7 @@ class AddonsBuilder:
                 f"build/package/{self.HOST} has no {self.LOADER}; "
                 "rebuild the framework and run `uv run poe deploy package`"
             )
-        for plugin in self._server.plugins_for(instance):
+        for plugin in self._server.list_plugins(instance):
             self._unpack(plugin, addons)
             self._write_configs(instance, plugin, addons)
         return addons

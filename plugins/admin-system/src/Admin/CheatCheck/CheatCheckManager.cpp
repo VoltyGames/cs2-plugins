@@ -372,7 +372,7 @@ void CheatCheckManager::Unfreeze(int targetSlot, VoltMod::MovementFreeze freeze,
     freeze.Release(controller.Pawn());
 }
 
-void CheatCheckManager::CancelAllForSlot(int slot)
+void CheatCheckManager::Forget(int slot)
 {
     if (ValidSlot(slot) && _checks[slot].Active)
     {

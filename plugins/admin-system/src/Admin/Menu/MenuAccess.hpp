@@ -20,7 +20,7 @@ namespace AdminSystem::Admin::Menu
 inline bool MayUse(App& app, int slot, std::string_view permission)
 {
     auto& players = app.Runtime.Players;
-    return app.Runtime.Policy.Authorize(players.RefFor(slot), std::nullopt, permission).has_value();
+    return app.Runtime.Policy.Authorize(players.GetRef(slot), std::nullopt, permission).has_value();
 }
 
 /** @ref MayUse as a row's condition: asked on every redraw, and it refuses the press itself, so

@@ -9,7 +9,7 @@
 namespace AdminSystem::Database
 {
 
-using Punishments::InfoFor;
+using Punishments::LookUp;
 using Punishments::PunishType;
 using VoltMod::Time;
 
@@ -31,7 +31,7 @@ static auto ActiveQuery(int64_t now)
         std::vector<Punishment> records;
         for (const auto& row : conn(sqlpp::select(sqlpp::all_of(t))
                                         .from(t)
-                                        .where(ActiveAt(t, now) and t.kind != InfoFor(PunishType::Warn).AuditName)))
+                                        .where(ActiveAt(t, now) and t.kind != LookUp(PunishType::Warn).AuditName)))
         {
             auto kind = Punishments::ParseAuditAction(row.kind);
             if (!kind)  // a kind written by a newer build; leave it to that build
@@ -77,7 +77,7 @@ void PunishmentRepository::CreateAsync(const Punishment& record, std::function<v
             const Tables::Punishments t;
             return VoltMod::Insert(
                 conn,
-                sqlpp::insert_into(t).set(t.kind = InfoFor(record.Kind).AuditName,
+                sqlpp::insert_into(t).set(t.kind = LookUp(record.Kind).AuditName,
                                           t.targetSteamId = record.TargetSteamId, t.targetName = record.TargetName,
                                           t.targetIp = record.TargetIp, t.adminSteamId = record.AdminSteamId,
                                           t.adminName = record.AdminName, t.reason = record.Reason,
@@ -115,10 +115,10 @@ void PunishmentRepository::CountActiveAsync(PunishType kind, int64_t steamId, st
         [kind, steamId, now = Time::Now()](auto& conn) {
             const Tables::Punishments t;
             int active = 0;
-            for (const auto& row : conn(
-                     sqlpp::select(sqlpp::count(t.id).as(total))
-                         .from(t)
-                         .where(t.targetSteamId == steamId and t.kind == InfoFor(kind).AuditName and ActiveAt(t, now))))
+            for (const auto& row :
+                 conn(sqlpp::select(sqlpp::count(t.id).as(total))
+                          .from(t)
+                          .where(t.targetSteamId == steamId and t.kind == LookUp(kind).AuditName and ActiveAt(t, now))))
             {
                 active = static_cast<int>(row.total);
             }
@@ -133,7 +133,7 @@ void PunishmentRepository::ClearAsync(PunishType kind, int64_t steamId)
         const Tables::Punishments t;
         conn(sqlpp::update(t)
                  .set(t.isActive = false)
-                 .where(t.targetSteamId == steamId and t.kind == InfoFor(kind).AuditName and t.isActive == true));
+                 .where(t.targetSteamId == steamId and t.kind == LookUp(kind).AuditName and t.isActive == true));
     });
 }
 

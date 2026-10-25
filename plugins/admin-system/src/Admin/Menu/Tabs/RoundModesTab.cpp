@@ -22,7 +22,7 @@ using VoltMod::ToggleRow;
 std::shared_ptr<VoltMod::Menu> BuildRoundModesTab(const MenuContext& ctx)
 {
     App& app = ctx.Plugin;
-    const TabSpec& tab = TabFor(TabId::RoundModes);
+    const TabSpec& tab = FindTab(TabId::RoundModes);
     const VoltMod::EnabledCondition allowed = Allows(app, tab.Permission);
 
     MenuBuilder builder(ctx.Translate(tab.LabelKey));
