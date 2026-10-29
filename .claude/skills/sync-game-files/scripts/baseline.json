@@ -1,0 +1,25 @@
+{
+  "build": "2000938",
+  "files": {
+    "scripts/weapons.vdata_c": {
+      "sha1": "b225a7d0bd7e201727bb1f1ed97915c46febc0ce",
+      "feeds": "plugins/stronghold/content/scripts/weapons.vdata"
+    },
+    "agents/models/ctm_sas/ctm_sas.vmdl_c": {
+      "sha1": "6ea5783cd0f1963a73f188ebd6f222956c62ed1c",
+      "feeds": "the Skeleton in models/stronghold/prone/prone.vmdl and prone.blend"
+    },
+    "weapons/models/taser/weapon_pist_taser.vmdl_c": {
+      "sha1": "bdf688f965a34b060e2079e2e05e7fdc84e4056f",
+      "feeds": "bones, attachments and weapon_metadata in models/stronghold/rpg and stinger"
+    },
+    "weapons/models/taser/weapon_pist_taser_mag.vmdl_c": {
+      "sha1": "599e0f3f668e1cfc6ba33582bc6fa386dd7f04ee",
+      "feeds": "magazine_model in models/stronghold/rpg and stinger"
+    },
+    "animation/skeletons/weapons/taser.vnmskel_c": {
+      "sha1": "8609fdc015eaae9d8c2e65d7fd67e7006ea26dcc",
+      "feeds": "the NmSkeletonReference in models/stronghold/rpg and stinger"
+    }
+  }
+}
