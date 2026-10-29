@@ -14,12 +14,12 @@
 {% endset %}
 
 {% block content %}
-      {% call blocks.menu(8, 8, ICONS, home) -%}
-      <Panel class="wordmark">
-        <Image class="wordmark__mark" src="{{ MARK }}" />
-        <Label class="wordmark__meat" text="MEAT" />
-        <Label class="wordmark__gg" text=".GG" />
-      </Panel>
-      <Label class="menu__brand-subtitle" text="{s:brand_subtitle}" />
-      {%- endcall %}
+  {% call blocks.menu(8, 8, ICONS, home) -%}
+  <Panel class="wordmark">
+    <Image class="wordmark__mark" src="{{ MARK }}" />
+    <Label class="wordmark__meat" text="MEAT" />
+    <Label class="wordmark__gg" text=".GG" />
+  </Panel>
+  <Label class="menu__brand-subtitle" text="{s:brand_subtitle}" />
+  {%- endcall %}
 {% endblock %}

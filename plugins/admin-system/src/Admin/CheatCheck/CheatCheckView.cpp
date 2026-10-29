@@ -99,8 +99,8 @@ std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
     std::string statusLine =
         state == PanelState::Joined
             ? std::format("<font color='{}'>{}</font>", Palette::Success, tr.Get("cheatCheck.joinedStatus", slot))
-            : std::format("<font color='{}'>{}: {}s</font>", Palette::Highlight, tr.Get("cheatCheck.timeRemaining", slot),
-                          remainSec);
+            : std::format("<font color='{}'>{}: {}s</font>", Palette::Highlight,
+                          tr.Get("cheatCheck.timeRemaining", slot), remainSec);
 
     html += std::format("<font color='{}' size='5'>{}</font><br>{}<br>{}", Palette::Accent,
                         tr.Get("cheatCheck.panelTitle", slot), body, statusLine);
