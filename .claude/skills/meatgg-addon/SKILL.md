@@ -5,7 +5,7 @@ description: Recompile all Stronghold workshop content into the CS2 client, refr
 
 # Prepare the meatgg addon
 
-The user uploads the meatgg addon (3808651114) with the Workshop Manager. This skill gets it ready.
+The user uploads the meatgg addon with the Workshop Manager. This skill gets it ready.
 You never publish it yourself.
 
 | Step | Result |
