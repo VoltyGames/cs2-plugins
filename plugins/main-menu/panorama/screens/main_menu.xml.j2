@@ -3,10 +3,11 @@
 {% import "button.xml.j2" as controls %}
 {% import "hero.xml.j2" as hero %}
 {% from "main_menu/icons.j2" import ICONS %}
+{% set MARK = "s2r://panorama/images/custom_game/meatgg/mark.vtex" %}
 
 {#- Shown on the home page in place of the rows. -#}
 {% set home %}
-{{ hero.hero("Counter-Strike 2", mark="s2r://panorama/images/custom_game/meatgg/mark.vtex") }}
+{{ hero.hero("Counter-Strike 2", mark=MARK) }}
 <Panel class="home-actions">
   {{ controls.button("report", "{s:home_report}", "primary") | indent(2) }}
 </Panel>
@@ -15,7 +16,7 @@
 {% block content %}
       {% call blocks.menu(8, 8, ICONS, home) -%}
       <Panel class="wordmark">
-        <Image class="wordmark__mark" src="s2r://panorama/images/custom_game/meatgg/mark.vtex" />
+        <Image class="wordmark__mark" src="{{ MARK }}" />
         <Label class="wordmark__meat" text="MEAT" />
         <Label class="wordmark__gg" text=".GG" />
       </Panel>

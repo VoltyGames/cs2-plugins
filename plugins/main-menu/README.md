@@ -46,8 +46,8 @@ Player-facing text is in `translations/`.
 
 ## Panorama
 
-`panorama/screens/` holds the menu screen. `panorama/templates/meatgg/` is the meat.gg brand kit
-(theme, controls, home and menu styles) that other plugins' screens use as well.
+`panorama/screens/` holds the menu screen. Its look comes from the voltmod theme through
+`menu.styles(ICONS)`, the same as every other plugin's menu.
 
 ```bash
 uv run poe panorama            # render, compile and install into your client
