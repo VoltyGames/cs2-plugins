@@ -43,11 +43,11 @@ Older: rebuild instead of reading code.
 
 ## What the console reaches
 
-Only commands built with `.ServerOnly()` or `.Anywhere()`, with no permission check; chat-only
-commands need a player. List them:
+Only commands built with `.ServerOnly()` or `.PlayersAndServer()`, with no permission check; chat-only
+and `.PlayersOnly()` commands need a player. List them:
 
 ```bash
-grep -rn -A3 '\.Add("' plugins --include=*.cpp | grep -B3 -E '\.(ServerOnly|Anywhere)\(' | grep '\.Add("'
+grep -rn -A3 '\.Add("' plugins --include=*.cpp | grep -B3 -E '\.(ServerOnly|PlayersAndServer)\(' | grep '\.Add("'
 ```
 
 Engine: `status`, `<convar>` to read, `<convar> <value>` to set, `mp_restartgame 1`.
