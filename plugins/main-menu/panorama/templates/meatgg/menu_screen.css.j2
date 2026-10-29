@@ -1,9 +1,0 @@
-{#- The complete stylesheet for a meat.gg menu screen. Keep the includes in this order. -#}
-{% import "icons.css.j2" as icons %}
-{% macro menu_styles(icon_set) -%}
-{% include "@main-menu/meatgg/theme.css.j2" %}
-{% include "menu.css.j2" %}
-{% include "@main-menu/meatgg/menu.css.j2" %}
-{% include "@main-menu/meatgg/home.css.j2" %}
-{{ icons.show_rules(icon_set) }}
-{%- endmacro %}

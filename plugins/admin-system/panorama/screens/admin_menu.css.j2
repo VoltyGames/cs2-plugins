@@ -1,6 +1,6 @@
-{% import "@main-menu/meatgg/menu_screen.css.j2" as meatgg %}
+{% import "menu.css.j2" as menu %}
 {% from "admin_menu/icons.j2" import ICONS %}
-{{ meatgg.menu_styles(ICONS) }}
+{{ menu.styles(ICONS) }}
 
 .stats {
   width: 100%;
@@ -16,8 +16,8 @@
   margin-right: 12px;
   padding: 16px 20px;
   border-radius: 12px;
-  background-color: card-top;
-  border: 1px solid hairline;
+  background-color: bg-card-top;
+  border: 1px solid border-default;
 }
 
 .stat--last {
@@ -33,6 +33,6 @@
   margin-top: 6px;
   font-size: 20px;
   font-weight: bold;
-  color: text-primary;
+  color: text-default;
   text-overflow: ellipsis;
 }

@@ -50,7 +50,7 @@ plugins/admin-system/  Admins, punishments, menus, reports, Postgres/MariaDB/SQL
 plugins/anticheat/     Detection cores, engine adapters, responses
 plugins/bhop/          Bunnyhop modes
 plugins/deathmatch/    Valve deathmatch mode rules
-plugins/main-menu/     !menu hub; owns the meat.gg Panorama brand kit (panorama/templates/meatgg)
+plugins/main-menu/     !menu hub and the meat.gg logo
 contracts/             Interfaces shared between plugins (header-only, not a plugin)
 deploy/                Deploy CLI for panel servers and Docker hosts
 workshop/              Builds the meatgg workshop addon; meatgg/ holds compiled files copied in as they are

@@ -1,24 +1,24 @@
 {% extends "screen.xml.j2" %}
 {% import "menu.xml.j2" as blocks %}
 {% import "button.xml.j2" as controls %}
-{% import "@main-menu/meatgg/home.xml.j2" as meatgg %}
+{% import "hero.xml.j2" as hero %}
 {% from "main_menu/icons.j2" import ICONS %}
 
 {#- Shown on the home page in place of the rows. -#}
 {% set home %}
-{{ meatgg.hero("Counter-Strike 2", mark=true) }}
-<Panel class="home-actions" hittest="true">
+{{ hero.hero("Counter-Strike 2", mark="s2r://panorama/images/custom_game/meatgg/mark.vtex") }}
+<Panel class="home-actions">
   {{ controls.button("report", "{s:home_report}", "primary") | indent(2) }}
 </Panel>
 {% endset %}
 
 {% block content %}
       {% call blocks.menu(8, 8, ICONS, home) -%}
-      <Panel class="wordmark" hittest="false">
-        <Image class="wordmark__mark" src="s2r://panorama/images/custom_game/meatgg/mark.vtex" hittest="false" />
-        <Label class="wordmark__meat" text="MEAT" hittest="false" />
-        <Label class="wordmark__gg" text=".GG" hittest="false" />
+      <Panel class="wordmark">
+        <Image class="wordmark__mark" src="s2r://panorama/images/custom_game/meatgg/mark.vtex" />
+        <Label class="wordmark__meat" text="MEAT" />
+        <Label class="wordmark__gg" text=".GG" />
       </Panel>
-      <Label class="menu__brand-subtitle" text="{s:brand_subtitle}" hittest="false" />
+      <Label class="menu__brand-subtitle" text="{s:brand_subtitle}" />
       {%- endcall %}
 {% endblock %}

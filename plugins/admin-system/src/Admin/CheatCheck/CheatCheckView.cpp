@@ -9,6 +9,7 @@
 #include <VoltMod/Messaging/Messages.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
+#include <VoltMod/Ui/Palette.hpp>
 #include <format>
 #include <string>
 
@@ -18,6 +19,7 @@ namespace AdminSystem::Admin::CheatCheck
 using VoltMod::Strings;
 using VoltMod::Time;
 namespace ChatColors = VoltMod::ChatColors;
+namespace Palette = VoltMod::Palette;
 
 enum class PanelState
 {
@@ -96,15 +98,16 @@ std::string CheatCheckView::PanelHtml(int slot, const PendingCheck& pc) const
     // Joined pauses the countdown: a calm status line replaces the timer and the kick warning.
     std::string statusLine =
         state == PanelState::Joined
-            ? std::format("<font color='#40ff70'>{}</font>", tr.Get("cheatCheck.joinedStatus", slot))
-            : std::format("<font color='#ffd040'>{}: {}s</font>", tr.Get("cheatCheck.timeRemaining", slot), remainSec);
+            ? std::format("<font color='{}'>{}</font>", Palette::Success, tr.Get("cheatCheck.joinedStatus", slot))
+            : std::format("<font color='{}'>{}: {}s</font>", Palette::Highlight, tr.Get("cheatCheck.timeRemaining", slot),
+                          remainSec);
 
-    html += std::format("<font color='#ff4040' size='5'>{}</font><br>{}<br>{}", tr.Get("cheatCheck.panelTitle", slot),
-                        body, statusLine);
+    html += std::format("<font color='{}' size='5'>{}</font><br>{}<br>{}", Palette::Accent,
+                        tr.Get("cheatCheck.panelTitle", slot), body, statusLine);
 
     if ((cfg.autoKick || cfg.autoBan) && state != PanelState::Joined)
     {
-        html += std::format("<br><font color='#ff8080'>{}</font>",
+        html += std::format("<br><font color='{}'>{}</font>", Palette::AccentBright,
                             tr.Get(cfg.autoBan ? "cheatCheck.willBan" : "cheatCheck.willKick", slot));
     }
 

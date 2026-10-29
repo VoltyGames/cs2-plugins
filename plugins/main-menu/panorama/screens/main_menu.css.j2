@@ -1,6 +1,6 @@
-{% import "@main-menu/meatgg/menu_screen.css.j2" as meatgg %}
+{% import "menu.css.j2" as menu %}
 {% from "main_menu/icons.j2" import ICONS %}
-{{ meatgg.menu_styles(ICONS) }}
+{{ menu.styles(ICONS) }}
 
 .wordmark {
   width: 100%;
@@ -23,11 +23,11 @@
 }
 
 .wordmark__meat {
-  color: text-primary;
+  color: text-default;
 }
 
 .wordmark__gg {
-  color: primary;
+  color: accent;
 }
 
 .home-actions {

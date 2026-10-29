@@ -73,7 +73,8 @@ commands.Add("slap")
 
 - `MenuBuilder(title).Add(ButtonRow{...})` for rows, admin-system's `Admin::Menu::ActionRows` for rows acting on an admin/target pair, `Flow<TState>::Create(menus, slot, state)` for multi-step actions.
 - Menus go through `runtime.Menus`: `OpenSession(slot, menu)` begins a session, `Open(slot, menu)` pushes onto it. With Panorama on, a plugin holds `runtime.UsePanorama(layout)`'s `Subscription` below its `VoltMod::PanoramaMenuLayout`; a player who is not `AddonManager.IsReady` gets center HTML.
-- A Panorama menu screen is the framework's `menu` block (it draws the root panel too), styled by `menu_styles(ICONS)` from main-menu's `meatgg/menu_screen.css.j2`; don't restyle it per plugin.
+- A Panorama menu screen is the framework's `menu` block (it draws the root panel too), styled by `{% import "menu.css.j2" as menu %}{{ menu.styles(ICONS) }}`; don't restyle it per plugin.
+- Colours come from the framework theme's tokens (`accent`, `text-muted`, `bg-overlay`, ...) in Panorama and from `VoltMod::Palette` in center HTML; `panorama check` and `lint` reject hex colours outside an `@define`.
 - A plugin adds a main menu entry by publishing `Contracts::IMenuSection` with `Exchange.Publish<Contracts::IMenuSection>(impl, id)` and keeping the returned `Subscription` as the publisher's last member; main-menu's config names the id.
 - Admin actions and effects are admin-system's own types (`Admin/Actions/`, `Admin/Effects/`): effects are `EffectDescriptor` values, and menu order comes from the explicit `MenuEffects` table.
 
