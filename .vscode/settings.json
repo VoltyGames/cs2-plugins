@@ -66,5 +66,6 @@
     "editor.tabSize": 2
   },
   "sql-formatter.dialect": "pl/sql",
-  "VSCodeCounter.exclude": ["references"]
+  "VSCodeCounter.exclude": ["references"],
+  "python.terminal.useEnvFile": true
 }
