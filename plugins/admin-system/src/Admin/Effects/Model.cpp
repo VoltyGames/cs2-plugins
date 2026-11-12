@@ -4,31 +4,14 @@
 
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Runtime.hpp>
-#include <string_view>
+#include <string>
+#include <utility>
 
 namespace AdminSystem::Admin::Effects
 {
 
 using Actions::ActionContext;
 using VoltMod::Pawn;
-
-// Restore live players to a base team model; respawn restores their selected agent.
-static constexpr std::string_view DefaultModelT = "characters/models/tm_phoenix/tm_phoenix.vmdl";
-static constexpr std::string_view DefaultModelCt = "characters/models/ctm_sas/ctm_sas.vmdl";
-
-// Spectators and unassigned players have no restore model; SetModel ignores the empty view.
-static std::string_view FindDefaultModel(VoltMod::Team team)
-{
-    if (team == VoltMod::Team::T)
-    {
-        return DefaultModelT;
-    }
-    if (team == VoltMod::Team::CT)
-    {
-        return DefaultModelCt;
-    }
-    return {};
-}
 
 const std::vector<FunModel>& FunModels()
 {
@@ -47,9 +30,6 @@ void PrecacheModels(VoltMod::Runtime& runtime)
     {
         runtime.Precache.Add(model.Path);
     }
-
-    runtime.Precache.Add(DefaultModelT);
-    runtime.Precache.Add(DefaultModelCt);
 }
 
 Effect MakeModel(VoltMod::Runtime& runtime)
@@ -74,16 +54,18 @@ Effect MakeModel(VoltMod::Runtime& runtime)
                       },
                   .Setup = [&runtime](const ActionContext& ctx, int param) -> EffectInstance {
                       // Dispatch already bounds-checked param and required the target alive.
-                      ctx.Target().Pawn().SetModel(FunModels()[param].Path);
+                      const Pawn target = ctx.Target().Pawn();
+                      std::string ownModel = target.ModelName();
+                      target.SetModel(FunModels()[param].Path);
 
-                      // EffectManager cancels any prior Model effect first (re-select swaps); OnStop restores the
-                      // team default when cleared while alive (a no-op on death, where IsAlive is false).
+                      // EffectManager cancels any prior Model effect first, so ownModel is never a fun model.
+                      // Clearing on death does nothing: the respawn brings the player's agent back.
                       int targetSlot = ctx.Target().Slot();
-                      return {.OnStop = [&entities = runtime.Entities, targetSlot]() {
+                      return {.OnStop = [&entities = runtime.Entities, targetSlot, ownModel = std::move(ownModel)]() {
                           const Pawn pawn = entities.Pawn(targetSlot);
                           if (pawn.IsAlive())
                           {
-                              pawn.SetModel(FindDefaultModel(pawn.TeamNum()));
+                              pawn.SetModel(ownModel);
                           }
                       }};
                   }};
