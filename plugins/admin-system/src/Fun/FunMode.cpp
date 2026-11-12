@@ -14,9 +14,6 @@
 namespace AdminSystem::Fun
 {
 
-static constexpr std::string_view KnifeT = "weapon_knife_t";
-static constexpr std::string_view KnifeCT = "weapon_knife";
-
 FunMode::FunMode(VoltMod::Runtime& runtime) : _rt(runtime), _overrides(runtime.ConVars)
 {
     ResolveConVars();
@@ -136,7 +133,7 @@ void FunMode::GiveKnifeOnly(int slot)
     }
 
     pawn.StripWeapons(false);
-    pawn.GiveItem(pawn.TeamNum() == VoltMod::Team::T ? KnifeT : KnifeCT);
+    pawn.GiveKnife();
 }
 
 }  // namespace AdminSystem::Fun

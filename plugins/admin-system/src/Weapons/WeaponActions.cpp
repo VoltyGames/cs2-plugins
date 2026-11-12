@@ -53,10 +53,12 @@ static WeaponActionResult RunWeaponAction(App& app, VoltMod::PlayerRef admin, Vo
 WeaponActionResult GiveWeapon(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target, std::string_view item)
 {
     const std::string classname(item);
-    return RunWeaponAction(
-        app, admin, target,
-        [&classname](const ActionContext& ctx) { return static_cast<bool>(ctx.Target().Pawn().GiveItem(classname)); },
-        "broadcast.gaveWeapon");
+    const auto give = [&classname](const ActionContext& ctx) {
+        const VoltMod::Pawn pawn = ctx.Target().Pawn();
+        // The menu's knife means the target's own team knife.
+        return static_cast<bool>(classname == "weapon_knife" ? pawn.GiveKnife() : pawn.GiveItem(classname));
+    };
+    return RunWeaponAction(app, admin, target, give, "broadcast.gaveWeapon");
 }
 
 WeaponActionResult StripWeapons(App& app, VoltMod::PlayerRef admin, VoltMod::PlayerRef target)
