@@ -8,9 +8,11 @@ this file when an adoption is committed.
   2026.11.11 pin `4220cad5`. The 12 commits between them touch nothing we use.
 - voltmod: `861606b0` (2026-11-11), "refactor: use s2sdk's binding, chainer, vector and solid types";
   the workaround is `e594a467`. The previous adoption was `58ffe713` (2026-10-16, s2sdk `e7086d0f`).
-  A follow-up adopted the CS user message protos, `PlayerCommandStatus_t`, `GetPlayerUserId`,
-  `Get/SetClientListening` (`runtime.Voice`) and the controller's `m_bIsHLTV`; record its commit here
-  when it lands.
+  A follow-up, `b53b26d4`..`7e8f6220` and released as 1.8.8, adopted:
+  - the CS user message protos;
+  - `PlayerCommandStatus_t` and `GetPlayerUserId`;
+  - `Get/SetClientListening` (`runtime.Voice`);
+  - the controller's `m_bIsHLTV`.
 
 ## Open workarounds for upstream gaps
 
