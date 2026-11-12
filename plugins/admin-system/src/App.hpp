@@ -118,6 +118,8 @@ private:
     void AddHomePageText();
     /** Keeps a banned account out; it sees the ban reason. */
     void RefuseBanned(VoltMod::ConnectRequest& request);
+    /** Keeps a voice-muted sender from being heard. */
+    void SilenceMuted(VoltMod::VoiceListen& listen);
     void OnPlayerConnect(VoltMod::Player& player);
     void OnPlayerDisconnect(VoltMod::Player& player);
     VoltMod::Status ConnectDatabase();

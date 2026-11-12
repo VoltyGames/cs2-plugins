@@ -21,21 +21,6 @@ namespace Log = VoltMod::Log;
 namespace AdminSystem
 {
 
-/** Keeps a voice-muted sender from being heard. */
-static void SilenceMuted(VoltMod::PlayerManager& players, const Punishments::PunishmentManager& punishments,
-                         Core::PlayerChat& chat, VoltMod::VoiceListen& listen)
-{
-    VoltMod::Player* muted = players.Get(listen.Sender);
-    if (!muted || !punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
-    {
-        return;
-    }
-
-    // Called once per receiver; ChatService collapses it to one chat line.
-    chat.NotifyVoiceMuted(muted);
-    listen.Blocked = true;
-}
-
 App::~App()
 {
     CheatCheck.CancelAll();
@@ -65,6 +50,19 @@ void App::RegisterPlayerLifecycle()
     _subs.Add(Runtime.Players.Connecting += [this](VoltMod::ConnectRequest& request) { RefuseBanned(request); });
     _subs.Add(Runtime.Players.Connected += [this](Player& player) { OnPlayerConnect(player); });
     _subs.Add(Runtime.Players.Disconnected += [this](Player& player) { OnPlayerDisconnect(player); });
+}
+
+void App::SilenceMuted(VoltMod::VoiceListen& listen)
+{
+    VoltMod::Player* muted = Runtime.Players.Get(listen.Sender);
+    if (!muted || !Punishments.IsPunished(AdminSystem::Punishments::PunishType::VoiceMute, muted->SteamId()))
+    {
+        return;
+    }
+
+    // Called once per receiver; ChatService collapses it to one chat line.
+    PlayerChat.NotifyVoiceMuted(muted);
+    listen.Blocked = true;
 }
 
 void App::RefuseBanned(VoltMod::ConnectRequest& request)
@@ -280,10 +278,7 @@ bool App::Load()
     }
 
     RegisterGameEventListeners();
-    const auto onVoice = [this](VoltMod::VoiceListen& listen) {
-        SilenceMuted(Runtime.Players, Punishments, PlayerChat, listen);
-    };
-    _subs.Add(Runtime.Voice.Before += onVoice);
+    _subs.Add(Runtime.Voice.Before += [this](VoltMod::VoiceListen& listen) { SilenceMuted(listen); });
     // Takes effect on the next map load.
     Admin::Effects::PrecacheModels(Runtime);
     // Reports bad map names now, not at the first !map.
