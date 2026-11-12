@@ -21,14 +21,21 @@ changed and finding what the framework can now drop or adopt.
 | Framework lock | `voltmod/conan.lock` |
 | Plugins lock | `conan.lock` |
 | Offsets and signatures the SDK does not cover | `voltmod/gamedata/gamedata.jsonc` |
+| Last commit whose changes were read and adopted, and open workarounds | `last-adopted.md` beside this skill |
 
 ## 1. See what changed
 
 1. `git -C references/s2sdk fetch` (fetch only, so the clone stays untouched).
-2. Read the pinned commit from `conandata.yml`, then list the new commits:
-   `git -C references/s2sdk log --format='%h %ad %s' --date=short <pin>..origin/cs2`.
-3. Get the size of the change: `git -C references/s2sdk diff --stat <pin> origin/cs2`.
-4. If the pin URL is not `alliedmodders/s2sdk`, compare the fork against upstream with
+2. Take the baseline from `last-adopted.md`, not from the pin: the bot moves the pin daily without
+   reading anything. List the new commits:
+   `git -C references/s2sdk log --format='%h %ad %s' --date=short <baseline>..origin/cs2`.
+3. Get the size of the change: `git -C references/s2sdk diff --stat <baseline> origin/cs2`.
+4. For each workaround `last-adopted.md` lists, check whether upstream now covers it; its note
+   says how to remove it.
+5. Compare the s2sdk and khook pins in the root `conan.lock` with `voltmod/conan.lock`. The bot
+   moves only voltmod's, and an editable build writes the root lock's SDK into voltmod's generators
+   too (`PACKAGE_VERSION` in `voltmod/build/windows-msvc-release/generators/s2sdk-config-version.cmake`).
+6. If the pin URL is not `alliedmodders/s2sdk`, compare the fork against upstream with
    `gh api repos/alliedmodders/s2sdk/compare/cs2...<owner>:s2sdk:<commit>`. Leave the fork only
    once upstream carries every commit it adds.
 
@@ -80,10 +87,12 @@ as long as `git -C voltmod ls-files --eol conan/recipes` lists no `w/crlf`.
 
 ## 5. Ship (only when the user asks)
 
-1. Commit `conandata.yml` and the code fixes in voltmod and push (`commit` skill). The SDK
+1. Once adopted changes are committed, set `last-adopted.md` to the s2sdk commit they were read
+   against and the voltmod commit that adopted them. Add or drop its workaround lines.
+2. Commit `conandata.yml` and the code fixes in voltmod and push (`commit` skill). The SDK
    workflow publishes the package, then the bot rewrites `voltmod/conan.lock` with the published
    timestamp.
-2. Release voltmod (`release` skill) when plugins need the new headers, then relock the root with
+3. Release voltmod (`release` skill) when plugins need the new headers, then relock the root with
    `uv run poe build --relock`.
 
 ## Never
