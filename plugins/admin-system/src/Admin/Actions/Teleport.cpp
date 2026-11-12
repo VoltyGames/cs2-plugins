@@ -14,7 +14,7 @@ static constexpr float TeleportClearance = 48.0f;
 /** A spot ahead of @p anchor along its level aim, at the anchor's height. */
 static Vector ClearedDestination(const VoltMod::Pawn& anchor)
 {
-    return anchor.Origin() + VoltMod::AngleToForward(QAngle(0.0f, anchor.EyeAngles().y, 0.0f)) * TeleportClearance;
+    return anchor.Origin() + VoltMod::YawToForward(anchor.EyeAngles().y) * TeleportClearance;
 }
 
 /** Two-target broadcast: the phrase receives the target names as {a} and {b}. Swap is the only

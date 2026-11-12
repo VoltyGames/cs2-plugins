@@ -50,18 +50,13 @@ static void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, boo
         return;
     }
 
-    int senderSlot = sender->Slot();
-    for (int i = 0; i < 64; ++i)
+    const int senderSlot = sender->Slot();
+    for (const VoltMod::Player* listener : rt.Players.All())
     {
-        if (i == senderSlot)
+        if (listener->Slot() != senderSlot)
         {
-            continue;
+            engine->SetClientListening(CPlayerSlot(listener->Slot()), CPlayerSlot(senderSlot), !muted);
         }
-        if (!rt.Players.Get(i))
-        {
-            continue;
-        }
-        engine->SetClientListening(CPlayerSlot(i), CPlayerSlot(senderSlot), !muted);
     }
 }
 
