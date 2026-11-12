@@ -9,9 +9,7 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Database/Api.hpp>
 #include <VoltMod/Events/EventTypes.hpp>
-#include <VoltMod/Unsafe/Hook.hpp>
 #include <algorithm>
-#include <engine2/ivengineserver2.h>
 #include <string>
 #include <utility>
 
@@ -23,36 +21,19 @@ namespace Log = VoltMod::Log;
 namespace AdminSystem
 {
 
-/** Keeps a voice-muted sender from being heard: the engine runs with listening off. */
-static VoltMod::HookResult<bool> SilenceMuted(VoltMod::PlayerManager& players,
-                                              const Punishments::PunishmentManager& punishments, Core::PlayerChat& chat,
-                                              IVEngineServer2& engine, CPlayerSlot receiver, CPlayerSlot sender,
-                                              bool listen)
+/** Keeps a voice-muted sender from being heard. */
+static void SilenceMuted(VoltMod::PlayerManager& players, const Punishments::PunishmentManager& punishments,
+                         Core::PlayerChat& chat, VoltMod::VoiceListen& listen)
 {
-    if (!listen)
-    {
-        return {};
-    }
-    VoltMod::Player* muted = players.Get(sender.Get());
+    VoltMod::Player* muted = players.Get(listen.Sender);
     if (!muted || !punishments.IsPunished(Punishments::PunishType::VoiceMute, muted->SteamId()))
     {
-        return {};
+        return;
     }
 
     // Called once per receiver; ChatService collapses it to one chat line.
     chat.NotifyVoiceMuted(muted);
-    VoltMod::CallOriginal(&IVEngineServer2::SetClientListening, &engine, receiver, sender, false);
-    return VoltMod::HookResult<bool>::Block(false);
-}
-
-static VoltMod::Subscription HookVoiceMute(IVEngineServer2* engine, VoltMod::PlayerManager& players,
-                                           const Punishments::PunishmentManager& punishments, Core::PlayerChat& chat)
-{
-    const auto onSetClientListening = [&players, &punishments, &chat](IVEngineServer2& engine, CPlayerSlot receiver,
-                                                                      CPlayerSlot sender, bool listen) {
-        return SilenceMuted(players, punishments, chat, engine, receiver, sender, listen);
-    };
-    return VoltMod::HookInterface(&IVEngineServer2::SetClientListening, engine, onSetClientListening);
+    listen.Blocked = true;
 }
 
 App::~App()
@@ -299,7 +280,10 @@ bool App::Load()
     }
 
     RegisterGameEventListeners();
-    _subs.Add(HookVoiceMute(Runtime.Unsafe.Interfaces.Engine, Runtime.Players, Punishments, PlayerChat));
+    const auto onVoice = [this](VoltMod::VoiceListen& listen) {
+        SilenceMuted(Runtime.Players, Punishments, PlayerChat, listen);
+    };
+    _subs.Add(Runtime.Voice.Before += onVoice);
     // Takes effect on the next map load.
     Admin::Effects::PrecacheModels(Runtime);
     // Reports bad map names now, not at the first !map.

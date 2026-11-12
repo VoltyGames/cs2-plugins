@@ -43,7 +43,7 @@ public:
 
     /**
      * Notify a voice-muted player that the engine is suppressing their microphone. Rate-limited
-     * to avoid spam: the SetClientListening hook fires once per (receiver, sender) pair every
+     * to avoid spam: runtime.Voice asks once per (receiver, sender) pair every
      * time the player keys voice, which can easily hit dozens of calls in a single press.
      */
     void NotifyVoiceMuted(VoltMod::Player* player);

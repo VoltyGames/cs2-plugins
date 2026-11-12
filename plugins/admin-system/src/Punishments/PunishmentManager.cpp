@@ -6,11 +6,9 @@
 #include <VoltMod/Api.hpp>
 #include <VoltMod/Core/Log.hpp>
 #include <VoltMod/Core/Time/Durations.hpp>
-#include <VoltMod/Engine/Interfaces.hpp>
 #include <VoltMod/Players/PlayerManager.hpp>
 #include <VoltMod/Runtime.hpp>
 #include <algorithm>
-#include <engine2/ivengineserver2.h>
 #include <utility>
 
 using AdminSystem::Database::Punishment;
@@ -34,29 +32,12 @@ static void StampTimes(Punishment& record)
     }
 }
 
-// Make the engine re-evaluate channels negotiated before the (un)mute landed. The
-// SetClientListening hook still enforces the cached decision.
-static void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId, bool muted)
+// Re-decide the channels opened before the (un)mute landed; the Voice handler enforces it.
+static void RefreshVoiceChannel(VoltMod::Runtime& rt, int64_t senderSteamId)
 {
-    auto* engine = rt.Unsafe.Interfaces.Engine;
-    if (!engine)
+    if (const VoltMod::Player* sender = rt.Players.BySteamId(senderSteamId))
     {
-        return;
-    }
-
-    auto* sender = rt.Players.BySteamId(senderSteamId);
-    if (!sender)
-    {
-        return;
-    }
-
-    const int senderSlot = sender->Slot();
-    for (const VoltMod::Player* listener : rt.Players.All())
-    {
-        if (listener->Slot() != senderSlot)
-        {
-            engine->SetClientListening(CPlayerSlot(listener->Slot()), CPlayerSlot(senderSlot), !muted);
-        }
+        rt.Voice.Refresh(sender->Slot());
     }
 }
 
@@ -114,7 +95,7 @@ std::optional<Punishment> PunishmentManager::GetActive(PunishType kind, int64_t 
         cache.erase(it);
         if (kind == PunishType::VoiceMute)
         {
-            RefreshVoiceChannel(_rt, steamId, false);
+            RefreshVoiceChannel(_rt, steamId);
         }
         return std::nullopt;
     }
@@ -162,7 +143,7 @@ void PunishmentManager::Issue(Punishment& record)
     }
     else if (record.Kind == PunishType::VoiceMute)
     {
-        RefreshVoiceChannel(_rt, record.TargetSteamId, true);
+        RefreshVoiceChannel(_rt, record.TargetSteamId);
     }
 
     const PunishTypeInfo& info = LookUp(record.Kind);
@@ -249,7 +230,7 @@ void PunishmentManager::RemoveCached(PunishType kind, Cache::iterator it, int64_
     GetCache(kind).erase(it);
     if (kind == PunishType::VoiceMute)
     {
-        RefreshVoiceChannel(_rt, steamId, false);
+        RefreshVoiceChannel(_rt, steamId);
     }
 }
 
@@ -303,7 +284,7 @@ void PunishmentManager::SwapCaches(std::vector<Punishment> rows)
     {
         if (!voiceMuted.contains(steamId))
         {
-            RefreshVoiceChannel(_rt, steamId, false);
+            RefreshVoiceChannel(_rt, steamId);
         }
     }
 }
