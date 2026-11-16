@@ -8,7 +8,7 @@ folder changes. `write` then ships that bake: the PNGs and .vmat into the model 
 A recipe:
 
     {
-      "size": 2048,
+      "density": 12,
       "parts": {"<object>": {"material": "<new>.vmat", "surfaces": {"<old>.vmat": "<finish>"}}},
       "finishes": {"<finish>": {"base": "polyhaven:<id>", "under": "polyhaven:<id>", "tile": 96,
                                 "tint": [r, g, b], "metallic": 0.0, "wear": 0.5, "grime": 0.5,
@@ -25,12 +25,16 @@ rounded parts, where a face looking half up smears the top-down projection down 
 `"artwork": true` in a finish keeps the surface's own colour texture, such as hazard stripes,
 under the library material's roughness, normal and wear.
 
+Each part bakes at the smallest of 512, 1024 and 2048 that gives it `density` pixels per game
+unit (DENSITY by default); a part or the recipe may set `density`, or a fixed `size`, instead.
+
 `at` in a mark is a point in Blender units on the face to stamp; the top-level `at` places parts
 the plugin stacks in code, for the preview render.
 """
 
 import json
 import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -38,8 +42,13 @@ from typing import Any
 from modelkit import finish, game, headless, library
 from modelkit.source2 import modeldoc
 
-# The atlas share kept free along its top edge for the hidden mark.
-HIDDEN_BAND = 0.03
+# Pixels per game unit a part's atlas aims for when the recipe sets no size: sharp at the
+# distances structures are seen from. Props seen up close set a higher `density`.
+DENSITY = 12.0
+
+# The pixels kept free along the atlas's top edge for the hidden mark: the bake's 12-pixel
+# margin spills into it, and the mark needs 16 clear rows.
+HIDDEN_BAND = 40
 
 
 @dataclass(frozen=True)
@@ -76,23 +85,60 @@ def stem_of(material: str) -> str:
     return PurePosixPath(material).stem
 
 
-def preview(plugin: str, model: str) -> Preview:
+def extract_source(plugin: str, model: str, revision: str, into: Path) -> Path:
+    """The model folder as it was at `revision` of the plugin's repo, Git LFS files resolved,
+    copied into `into`; returns its .blend. For re-baking a model whose .blend already holds
+    the baked material instead of the surfaces its recipe names."""
+    repo = game.plugin_dir(plugin)
+    folder = PurePosixPath("content", "models", plugin, model)
+    listed = subprocess.run(
+        ["git", "-C", str(repo), "ls-tree", "-r", "--name-only", revision, str(folder)],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.split()
+    into.mkdir(parents=True)
+    for name in listed:
+        stored = subprocess.run(
+            ["git", "-C", str(repo), "show", f"{revision}:{name}"], check=True, capture_output=True
+        ).stdout
+        content = subprocess.run(
+            ["git", "-C", str(repo), "lfs", "smudge"],
+            input=stored,
+            check=True,
+            capture_output=True,
+        ).stdout
+        (into / PurePosixPath(name).name).write_bytes(content)
+    blend = into / f"{model}.blend"
+    if not blend.is_file():
+        raise FileNotFoundError(f"no {model}.blend in {folder} at {revision}")
+    return blend
+
+
+def preview(plugin: str, model: str, source: str | None = None) -> Preview:
+    """Bakes the recipe; `source`, a revision of the plugin's repo, bakes from the model's
+    .blend as it was then."""
     folder = game.models_dir(plugin) / model
     recipe = read_recipe(plugin, model)
     scratch = scratch_dir(plugin, model)
     if scratch.exists():
         shutil.rmtree(scratch)
     (scratch / "raw").mkdir(parents=True)
+    blend = folder / f"{model}.blend"
+    if source:
+        blend = extract_source(plugin, model, source, scratch / "source")
     baked = headless.run_job(
         "bake",
-        folder / f"{model}.blend",
+        blend,
         parts=recipe["parts"],
         finishes=resolve_finishes(recipe["finishes"]),
         marks=recipe.get("marks", []),
-        size=recipe.get("size", 2048),
+        size=recipe.get("size"),
+        density=recipe.get("density", DENSITY),
+        largest=game.read_texture_cap() or 2048,
         folder=str(scratch / "raw"),
         save_to=str(scratch / f"{model}.blend"),
-        reserve=HIDDEN_BAND if recipe.get("hidden_mark") else 0.0,
+        reserve=HIDDEN_BAND if recipe.get("hidden_mark") else 0,
     )
     textures, density, device = {}, {}, "CPU"
     for object_name, result in baked.items():
@@ -105,8 +151,7 @@ def preview(plugin: str, model: str) -> Preview:
             recipe.get("hidden_mark"),
         )
         textures[material] = {channel: str(path) for channel, path in written.items()}
-        size = recipe.get("size", 2048)
-        density[object_name] = result["density"] * min(size, game.read_texture_cap() or size)
+        density[object_name] = result["density"] * result["size"]
         device = result["device"]
     shown = headless.run_job(
         "adopt",
@@ -189,6 +234,7 @@ def write(plugin: str, model: str) -> list[str]:
         textures=textures,
         save=str(folder / f"{model}.blend"),
         export_dir=str(folder),
+        relink_from=str(scratch / "source"),
     )
     removed = [f"removed {path}" for path in remove_replaced(folder, addon_folder, replaced)]
     return written + [adopted["saved"], *adopted["exported"], *removed]

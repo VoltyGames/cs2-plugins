@@ -113,7 +113,12 @@ maker's mark. Its recipe is `plugins/<plugin>/bake/<model>.json`; the format is 
   the user, tune the recipe, bake again.
 - `--write` ships the preview: textures and `.vmat` into the model folder, the `.blend` saved,
   the DMX re-exported, the replaced `.vmat` files and their unused textures deleted. Then compile.
-- Structures get solid weathered paint; recipe colours are linear, as Blender takes them.
+- Structures get solid weathered olive drab (the `olive_drab` finish in any Stronghold recipe);
+  recipe colours are linear, as Blender takes them.
+- Leave `size` out: each part bakes at the smallest of 512, 1024 and 2048 reaching 12 pixels per
+  game unit. Props seen up close set `"density": 16`.
+- To re-bake a model whose `.blend` already holds its baked material, pass
+  `--source <revision>`: a commit of the plugin's repo from before its first bake.
 - Keep recipes out of `content/`: `voltmod content compile --prune` deletes files nothing
   references there.
 - A finish with `"artwork": true` keeps the surface's own colour texture (hazard stripes, signs)

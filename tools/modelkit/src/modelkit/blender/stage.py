@@ -23,6 +23,9 @@ def find_idle(scene_name: str) -> bpy.types.Action | None:
 def hold(ob: bpy.types.Object, action: bpy.types.Action, frame: float) -> None:
     """Poses `ob` at `frame` of `action` whatever the scene's frame, with a one-frame NLA strip,
     so parts in one stage can each show a different moment."""
+    # A bone the action leaves unkeyed keeps whatever pose the file was saved in.
+    for bone in ob.pose.bones:
+        bone.matrix_basis.identity()
     ob.animation_data_create()
     ob.animation_data.action = None
     track = ob.animation_data.nla_tracks.new()

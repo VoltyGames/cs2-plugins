@@ -30,23 +30,45 @@ def atlas_density(ob: bpy.types.Object, materials: set[str]) -> float:
     return measure.summarize(points, uvs)["density"]
 
 
+SIZES = (512, 1024, 2048)
+
+
+def choose_size(density: float, target: float, largest: int) -> int:
+    """The smallest atlas size giving `target` pixels per unit, `density` being the atlas's
+    pixels per unit per pixel of width; the largest allowed when none does."""
+    allowed = [size for size in SIZES if size <= largest] or [largest]
+    return next((size for size in allowed if density * size >= target), allowed[-1])
+
+
 def main(
     parts: dict[str, dict[str, Any]],
     finishes: dict[str, dict[str, Any]],
     marks: list[dict[str, Any]],
-    size: int,
     folder: str,
     save_to: str,
-    reserve: float = 0.0,
+    size: int | None = None,
+    density: float = 12.0,
+    largest: int = 2048,
+    reserve: int = 0,
 ) -> dict[str, Any]:
     """`parts` maps a part's object to its new `material` and the `surfaces` it replaces, each
-    with a finish name. Writes raw RGBA bakes into `folder` and the baked scenes to `save_to`."""
+    with a finish name, and may set its own `size` or target `density`. `reserve` keeps that many
+    pixels free along the atlas's top and right edges, for a hidden mark. Without a size, each
+    part bakes at the smallest standard size reaching its density. Writes raw RGBA bakes into
+    `folder` and the baked scenes to `save_to`."""
     results = {}
     for object_name, part in parts.items():
         ob = bpy.data.objects[object_name]
         replaced = set(part["surfaces"])
         painted_on = ob.data.uv_layers.active.name
-        bake.make_atlas(ob, replaced, reserve=reserve)
+        bake.make_atlas(ob, replaced)
+        target = part.get("density", density)
+        chosen = (
+            part.get("size") or size or choose_size(atlas_density(ob, replaced), target, largest)
+        )
+        if reserve:
+            bake.shrink_atlas(ob, replaced, reserve / chosen)
+        per_pixel = atlas_density(ob, replaced)
         copy = bake.bakeable_copy(ob, replaced)
         for index, material in enumerate(copy.data.materials):
             if material and material.name in replaced:
@@ -60,7 +82,7 @@ def main(
                 )
                 copy.data.materials[index] = working
         device = bake.use_fastest_device(copy.users_scene[0])
-        files = bake.bake(copy, size, folder)
+        files = bake.bake(copy, chosen, folder)
         bpy.data.objects.remove(copy, do_unlink=True)
 
         frames = [
@@ -68,7 +90,6 @@ def main(
             for mark in marks
             if mark.get("part", object_name) == object_name
         ]
-        density = atlas_density(ob, replaced)
         target = bpy.data.materials.get(part["material"]) or bpy.data.materials.new(
             part["material"]
         )
@@ -81,7 +102,8 @@ def main(
         results[object_name] = {
             "files": files,
             "frames": frames,
-            "density": density,
+            "density": per_pixel,
+            "size": chosen,
             "device": device,
         }
     blocks = set(bpy.data.scenes) | set(bpy.data.actions)

@@ -14,6 +14,9 @@ from modelkit.blender import bake, stage
 THREE_QUARTER = (1.0, -1.0, 0.24)
 # The share of the card's width and height the model may fill, and where its middle sits
 # vertically, a little low so the floor shows under it.
+# Glow is turned down for the card: at full strength a lamp or strip blooms into a pale blob
+# at card size. Only the render's in-memory copy changes.
+GLOW = 0.35
 FILL = (0.78, 0.72)
 RISE = 0.47
 # Darkens the concrete to the old cards' charcoal floor.
@@ -41,6 +44,14 @@ def area_light(
     if only is not None:
         ob.light_linking.receiver_collection = only
     scene.collection.objects.link(ob)
+
+
+def dim_glow(scene: bpy.types.Scene) -> None:
+    lit = {slot.material for ob in scene.objects if ob.type == "MESH" for slot in ob.material_slots}
+    for material in filter(None, lit):
+        for node in material.node_tree.nodes if material.node_tree else ():
+            if node.type == "BSDF_PRINCIPLED":
+                node.inputs["Emission Strength"].default_value *= GLOW
 
 
 def floor(scene: bpy.types.Scene, lo: Vector, hi: Vector, maps: dict[str, str]) -> None:
@@ -164,6 +175,7 @@ def main(
     for ob in scene.objects:
         if ob.type == "MESH":
             model.objects.link(ob)
+    dim_glow(scene)
     floor(scene, lo, hi, floor_maps)
     # Lights sit relative to the view, so every card is lit alike: a broad key in front, above
     # and to the camera's right, the fill low on its left, the rim behind the model.

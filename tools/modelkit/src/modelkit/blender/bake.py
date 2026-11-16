@@ -341,11 +341,19 @@ def make_atlas(
         mesh.materials[index] = material
     bpy.data.materials.remove(blank)
     if reserve:
-        layer = mesh.uv_layers[ATLAS_UV]
-        for polygon in mesh.polygons:
-            if polygon.material_index in chosen:
-                for loop in polygon.loop_indices:
-                    layer.data[loop].uv *= 1.0 - reserve
+        shrink_atlas(ob, materials, reserve)
+
+
+def shrink_atlas(ob: bpy.types.Object, materials: set[str], reserve: float) -> None:
+    """Scales the atlas faces with `materials` toward the bottom-left corner, leaving `reserve`
+    of the atlas free along its top and right edges."""
+    mesh = ob.data
+    layer = mesh.uv_layers[ATLAS_UV]
+    chosen = {i for i, m in enumerate(mesh.materials) if m and m.name in materials}
+    for polygon in mesh.polygons:
+        if polygon.material_index in chosen:
+            for loop in polygon.loop_indices:
+                layer.data[loop].uv *= 1.0 - reserve
 
 
 def bakeable_copy(ob: bpy.types.Object, materials: set[str]) -> bpy.types.Object:

@@ -53,18 +53,30 @@ def render_views(folder: str, at: dict[str, list[float]] | None) -> list[str]:
     return paths
 
 
+def relink(old: str, new: str) -> None:
+    """Points images loaded from `old`, an extracted source folder, at the same names in `new`."""
+    old = os.path.normcase(os.path.abspath(old))
+    for image in bpy.data.images:
+        path = bpy.path.abspath(image.filepath)
+        if path and os.path.normcase(os.path.abspath(path)).startswith(old):
+            image.filepath = os.path.join(new, os.path.basename(path))
+
+
 def main(
     textures: dict[str, dict[str, str]],
     render_dir: str | None = None,
     at: dict[str, list[float]] | None = None,
     save: str | None = None,
     export_dir: str | None = None,
+    relink_from: str | None = None,
 ) -> dict[str, Any]:
     for name, maps in textures.items():
         show_textures(bpy.data.materials[name], maps)
     result: dict[str, Any] = {}
     if render_dir:
         result["renders"] = render_views(render_dir, at)
+    if save and relink_from:
+        relink(relink_from, os.path.dirname(save))
     if save:
         blocks = set(bpy.data.scenes) | set(bpy.data.actions)
         bpy.data.libraries.write(

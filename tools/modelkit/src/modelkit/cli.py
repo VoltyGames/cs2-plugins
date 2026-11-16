@@ -5,6 +5,7 @@ Run from the repository root: uv run modelkit <command>
 
 import dataclasses
 import json
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Annotated, Any
@@ -175,6 +176,13 @@ def bake(
     write: Annotated[
         bool, typer.Option("--write", help="Ship the last preview into the model folder")
     ] = False,
+    source: Annotated[
+        str | None,
+        typer.Option(
+            help="Bake from the model's .blend at this revision of the plugin's repo, for a "
+            "model already baked once"
+        ),
+    ] = None,
 ) -> None:
     """Retexture a model from its bake recipe: CC0 materials baked with wear into one texture
     set per part, with its maker's marks. Previews first; --write ships the preview."""
@@ -185,9 +193,11 @@ def bake(
             command = f"uv run voltmod content compile {plugin} models/{plugin}/{model}"
             console.done(f"now compile: {command} --install client")
             return
-        result = baking.preview(plugin, model)
+        result = baking.preview(plugin, model, source)
     except (FileNotFoundError, ValueError, headless.BlenderError) as failed:
         raise fail(str(failed)) from None
+    except subprocess.CalledProcessError as failed:
+        raise fail(f"git: {failed.stderr}") from None
     for part, density in result.density.items():
         console.info(f"{part}: {density:.1f} pixels per unit in game")
     console.info(f"baked on {result.device}")
