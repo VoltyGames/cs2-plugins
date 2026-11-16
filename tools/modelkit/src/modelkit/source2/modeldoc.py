@@ -1,6 +1,17 @@
 """The files the compiler reads: .vmat materials, ModelDoc .vmdl models and .vpcf particle
 systems. Needs no Blender."""
 
+import os
+import re
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+
+from modelkit.source2.kv3 import Parsed, Resource, Value, parse, write
+
+type FilePath = str | os.PathLike[str]
+type Node = dict[str, Value]
+type Triple = tuple[float, float, float]
+
 HEADER = (
     "<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} "
     "format:modeldoc28:version{fb63b6ca-f435-4aa0-a2c7-c66ddc651dca} -->\n"
@@ -11,23 +22,19 @@ PARTICLE_HEADER = (
 )
 
 
-class Resource(str):
-    """A path to another compiled file, such as a particle's texture or child effect."""
-
-
 def write_vmat(
-    path,
-    folder,
-    color,
-    rough,
-    normal=None,
-    metalness=0.6,
-    roughness=0.55,
-    glow_mask=None,
-    glow=1.0,
-    opacity=None,
-    cutout=None,
-):
+    path: FilePath,
+    folder: str,
+    color: str,
+    rough: str,
+    normal: str | None = None,
+    metalness: float = 0.6,
+    roughness: float = 0.55,
+    glow_mask: str | None = None,
+    glow: float = 1.0,
+    opacity: float | None = None,
+    cutout: str | None = None,
+) -> FilePath:
     """Writes a csgo_complex material; texture names are files in `folder`, e.g. "models/x/y/".
 
     `rough` is the addon path of a flat white roughness texture, scaled by `roughness`.
@@ -62,6 +69,26 @@ def write_vmat(
     ]
     if glow_mask:
         keys.append(("TextureSelfIllumMask", folder + glow_mask))
+    return write_layer(path, keys)
+
+
+def write_baked_vmat(path: FilePath, folder: str, stem: str) -> FilePath:
+    """Writes a csgo_complex material over a baked texture set in `folder`: <stem>_color, _normal,
+    _rough, _metal and _ao PNGs, as the vehicles use."""
+    keys = [
+        ("shader", "csgo_complex.vfx"),
+        ("F_METALNESS_TEXTURE", "1"),
+        ("g_vColorTint", "[1.000000 1.000000 1.000000 0.000000]"),
+        ("TextureAmbientOcclusion", f"{folder}{stem}_ao.png"),
+        ("TextureColor", f"{folder}{stem}_color.png"),
+        ("TextureMetalness", f"{folder}{stem}_metal.png"),
+        ("TextureNormal", f"{folder}{stem}_normal.png"),
+        ("TextureRoughness", f"{folder}{stem}_rough.png"),
+    ]
+    return write_layer(path, keys)
+
+
+def write_layer(path: FilePath, keys: list[tuple[str, str]]) -> FilePath:
     body = "".join(f'\t"{k}"\t"{v}"\n' for k, v in keys)
     with open(path, "w", newline="\n") as f:
         f.write(f'"Layer0"\n{{\n{body}}}\n')
@@ -69,15 +96,15 @@ def write_vmat(
 
 
 def write_vmdl(
-    path,
-    meshes,
-    hulls=(),
-    animations=(),
-    material_groups=None,
-    attachments=(),
-    surface="metal",
-    scale=1.0,
-):
+    path: FilePath,
+    meshes: Iterable[tuple[str, str]],
+    hulls: Sequence[str] = (),
+    animations: Sequence[tuple[str, str, bool]] = (),
+    material_groups: dict[str, dict[str, str]] | None = None,
+    attachments: Sequence[tuple[str, str, Triple, Triple]] = (),
+    surface: str = "metal",
+    scale: float = 1.0,
+) -> FilePath:
     """Writes a ModelDoc .vmdl.
 
     `meshes`: [(name, dmx)]. `hulls`: [dmx]. `animations`: [(name, dmx, looping)]; a prop plays
@@ -103,16 +130,24 @@ def write_vmdl(
         nodes.append(listing("ModelModifierList", [scale_and_mirror(scale)]))
     root = {"rootNode": {"_class": "RootNode", "children": nodes}}
     with open(path, "w", newline="\n") as f:
-        f.write(HEADER + kv3(root) + "\n")
+        f.write(HEADER + write(root) + "\n")
     return path
 
 
-def write_vpcf(path, emitters, initializers, operators, renderers, children=(), **fields):
+def write_vpcf(
+    path: FilePath,
+    emitters: Iterable[Node],
+    initializers: Iterable[Node],
+    operators: Iterable[Node],
+    renderers: Iterable[Node],
+    children: Sequence[str] = (),
+    **fields: Value,
+) -> FilePath:
     """Writes a particle system. Each operator is an `op(...)`; `children` are .vpcf paths that
     start with it; `fields` are the system's own, such as m_nMaxParticles or m_ConstantColor.
     A texture is a `Resource`: m_vecTexturesInput=[{"m_hTexture": Resource(path)}].
 
-    The compiler drops a field it doesn't know, so run `particles.py check` on the result.
+    The compiler drops a field it doesn't know, so run `modelkit particles check` on the result.
     """
     system = {"_class": "CParticleSystemDefinition", "m_nBehaviorVersion": 12, **fields}
     system["m_Emitters"] = list(emitters)
@@ -122,40 +157,40 @@ def write_vpcf(path, emitters, initializers, operators, renderers, children=(), 
     if children:
         system["m_Children"] = [{"m_ChildRef": Resource(child)} for child in children]
     with open(path, "w", newline="\n") as f:
-        f.write(PARTICLE_HEADER + kv3(system) + "\n")
+        f.write(PARTICLE_HEADER + write(system) + "\n")
     return path
 
 
-def op(cls, **fields):
+def op(cls: str, **fields: Value) -> Node:
     """One emitter, initializer, operator or renderer, e.g. op("C_OP_Decay")."""
     return {"_class": cls, **fields}
 
 
-def literal(value):
+def literal(value: float) -> Node:
     """A fixed number where the field takes an input, such as an emitter's particle count."""
     return {"m_nType": "PF_TYPE_LITERAL", "m_flLiteralValue": float(value)}
 
 
-def vector(x, y, z):
+def vector(x: float, y: float, z: float) -> Node:
     """A fixed vector where the field takes an input, such as a velocity bound."""
     return {"m_nType": "PVEC_TYPE_LITERAL", "m_vLiteralValue": [float(x), float(y), float(z)]}
 
 
-def listing(cls, children):
+def listing(cls: str, children: list[Node]) -> Node:
     return {"_class": cls, "children": children}
 
 
-def render_mesh(name, dmx):
+def render_mesh(name: str, dmx: str) -> Node:
     return {"_class": "RenderMeshFile", "name": name, "filename": dmx}
 
 
-def material_group(index, name, remaps):
+def material_group(index: int, name: str, remaps: dict[str, str]) -> Node:
     pairs = [{"_class": "BaseMaterialRemap", "from": a, "to": b} for a, b in remaps.items()]
     kind = "DefaultMaterialGroup" if index == 0 else "MaterialGroup"
     return {"_class": kind, "name": name, "remaps": pairs}
 
 
-def attachment(name, bone, origin, angles):
+def attachment(name: str, bone: str, origin: Triple, angles: Triple) -> Node:
     return {
         "_class": "Attachment",
         "name": name,
@@ -167,7 +202,7 @@ def attachment(name, bone, origin, angles):
     }
 
 
-def animation(name, dmx, looping):
+def animation(name: str, dmx: str, looping: bool) -> Node:
     return {
         "_class": "AnimFile",
         "name": name,
@@ -181,7 +216,7 @@ def animation(name, dmx, looping):
     }
 
 
-def physics_hull(dmx, surface):
+def physics_hull(dmx: str, surface: str) -> Node:
     return {
         "_class": "PhysicsHullFile",
         "filename": dmx,
@@ -192,7 +227,7 @@ def physics_hull(dmx, surface):
     }
 
 
-def scale_and_mirror(scale):
+def scale_and_mirror(scale: float) -> Node:
     return {
         "_class": "ModelModifier_ScaleAndMirror",
         "scale": float(scale),
@@ -204,24 +239,43 @@ def scale_and_mirror(scale):
     }
 
 
-def kv3(value, depth=0):
-    pad = "\t" * depth
-    if isinstance(value, dict):
-        fields = "".join(f"{pad}\t{k} = {kv3(v, depth + 1)}\n" for k, v in value.items())
-        return "{\n" + fields + pad + "}"
-    if isinstance(value, list):
-        if not value:
-            return "[  ]"
-        if all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in value):
-            return "[ " + ", ".join(kv3(v) for v in value) + " ]"
-        return "[\n" + "".join(f"{pad}\t{kv3(v, depth + 1)},\n" for v in value) + pad + "]"
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, float):
-        text = f"{value:.6f}".rstrip("0")
-        return text + "0" if text.endswith(".") else text
-    if isinstance(value, int):
-        return str(value)
-    if isinstance(value, Resource):
-        return f'resource:"{value}"'
-    return f'"{value}"'
+def read_vmat(path: FilePath) -> dict[str, str]:
+    """A .vmat's keys and values, such as {"TextureColor": "models/x/x_color.png"}."""
+    with open(path, encoding="utf-8") as f:
+        return dict(re.findall(r'^\s*"(\w+)"\s+"([^"]*)"', f.read(), re.MULTILINE))
+
+
+def find_nodes(tree: Parsed, cls: str) -> list[dict[str, Parsed]]:
+    """Every node of class `cls` in a parsed ModelDoc tree."""
+    found, pending = [], [tree]
+    while pending:
+        node = pending.pop()
+        if isinstance(node, dict):
+            if node.get("_class") == cls:
+                found.append(node)
+            pending.extend(node.values())
+        elif isinstance(node, list):
+            pending.extend(node)
+    return found
+
+
+@dataclass(frozen=True)
+class ModelInfo:
+    meshes: list[str]
+    """Render mesh DMX paths."""
+    scale: float
+    """What the ScaleAndMirror modifier applies; 1.0 without one."""
+    swapped: set[str]
+    """Material paths a material group remaps, such as team colours."""
+
+
+def read_vmdl(path: FilePath) -> ModelInfo:
+    with open(path, encoding="utf-8") as f:
+        tree = parse(f.read())
+    scales = find_nodes(tree, "ModelModifier_ScaleAndMirror")
+    remaps = find_nodes(tree, "BaseMaterialRemap")
+    return ModelInfo(
+        meshes=[node["filename"] for node in find_nodes(tree, "RenderMeshFile")],
+        scale=float(scales[0].get("scale", 1.0)) if scales else 1.0,
+        swapped={node[end] for node in remaps for end in ("from", "to")},
+    )

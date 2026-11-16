@@ -8,7 +8,7 @@ Run it inside Blender with the repo root as REPO:
     ns = {"REPO": r"<repo>"}
     exec(open(r"<repo>/.claude/skills/3d-model/examples/teleporter.py").read(), ns)
 
-After `source2.export`, `ns["write_modeldoc"]()` writes the .vmat files and the .vmdl.
+After `export.write_dmx`, `ns["write_modeldoc"]()` writes the .vmat files and the .vmdl.
 """
 
 import math
@@ -19,20 +19,20 @@ import bmesh
 import numpy as np
 from mathutils import Matrix
 
-sys.path.insert(0, os.path.join(REPO, ".claude", "skills", "3d-model", "scripts"))  # noqa: F821
-import modelkit  # noqa: E402
+sys.path.insert(0, os.path.join(REPO, "tools", "modelkit", "src"))  # noqa: F821
+import modelkit.blender  # noqa: E402
 
-modelkit.reload()
-from modelkit import (  # noqa: E402
-    modeldoc,
+modelkit.blender.reload()
+from modelkit.blender import (  # noqa: E402
+    export,
     objects,
     preview,
     rig,
     session,
     shapes,
-    source2,
     surfaces,
 )
+from modelkit.source2 import modeldoc  # noqa: E402
 
 FOLDER = "models/stronghold/teleporter/"
 DIR = os.path.join(REPO, "plugins", "stronghold", "content", FOLDER)  # noqa: F821
@@ -224,7 +224,7 @@ arrive += [(20, 0.3), (23, 0.0), (30, 0.0)]
 rig.animate(arm, "teleporter_arrive", {"rotor": spin(30, burst=1.5), "strip": lift(arrive)})
 rig.show(arm, "teleporter_idle")
 # Action names are shared by every scene in the session, so they carry the model's name.
-source2.remember(
+export.remember(
     "teleporter",
     model="teleporter",
     armature="teleporter_skeleton",

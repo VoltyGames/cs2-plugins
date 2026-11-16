@@ -14,11 +14,11 @@ import sys
 import bmesh
 from mathutils import Matrix, Vector
 
-sys.path.insert(0, os.path.join(REPO, ".claude", "skills", "3d-model", "scripts"))  # noqa: F821
-import modelkit  # noqa: E402
+sys.path.insert(0, os.path.join(REPO, "tools", "modelkit", "src"))  # noqa: F821
+import modelkit.blender  # noqa: E402
 
-modelkit.reload()
-from modelkit import objects, preview, rig, session, shapes, source2, surfaces  # noqa: E402
+modelkit.blender.reload()
+from modelkit.blender import export, objects, preview, rig, session, shapes, surfaces  # noqa: E402
 
 FOLDER = "models/stronghold/jump_pad/"
 DIR = os.path.join(REPO, "plugins", "stronghold", "content", FOLDER)  # noqa: F821
@@ -328,7 +328,7 @@ launch += [(13, 16.5), (18, 6.0), (21, 0.0), (23, LOWEST), (26, 0.6), (29, -0.2)
 rig.animate(arm, "jump_pad_launch", tracks(rig.eased(launch)))
 rig.show(arm, "jump_pad_idle")
 # Action names are shared by every scene in the session, so they carry the model's name.
-source2.remember(
+export.remember(
     "jump_pad",
     model="jump_pad",
     armature="jump_pad_skeleton",

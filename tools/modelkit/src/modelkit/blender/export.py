@@ -4,15 +4,24 @@ import os
 import re
 import shutil
 import tempfile
+from collections.abc import Iterable
+from typing import Any
 
 import bpy
 
-from . import rig
+from modelkit.blender import rig
 
+# The scene property holding what remember() stored.
 SETTINGS = "modelkit"
 
 
-def remember(scene_name, model=None, armature=None, actions=(), files=None):
+def remember(
+    scene_name: str,
+    model: str | None = None,
+    armature: str | None = None,
+    actions: Iterable[str] = (),
+    files: dict[str, str] | None = None,
+) -> None:
     """Stores how the scene exports, so a later session can re-export it from the .blend alone.
 
     `model` prefixes the animation files (`<model>_<action>.dmx`); without it each takes its
@@ -27,20 +36,20 @@ def remember(scene_name, model=None, armature=None, actions=(), files=None):
     }
 
 
-def settings(scene_name):
+def read_settings(scene_name: str) -> dict[str, Any]:
     stored = bpy.data.scenes[scene_name].get(SETTINGS)
     if stored is None:
         raise ValueError(f"scene {scene_name} has no export settings; call remember() first")
     return stored.to_dict()
 
 
-def export(scene_name, out_dir):
+def write_dmx(scene_name: str, out_dir: str) -> list[str]:
     """Exports the scene's meshes and each remembered action as DMX into `out_dir`.
 
     Blender Source Tools exports only the current action and leaves object references stale,
     so everything is looked up by name on each pass.
     """
-    kept = settings(scene_name)
+    kept = read_settings(scene_name)
     armature, actions, files = kept["armature"], kept["actions"], kept["files"]
     renamed = [
         m.name
@@ -83,7 +92,7 @@ def export(scene_name, out_dir):
     return sorted(written)
 
 
-def save_blend(scenes, path):
+def save_blend(scenes: str | Iterable[str], path: str) -> str:
     """Writes `scenes`, one name or a list, and their remembered actions to `path`, image paths
     relative. Other scenes, such as imported references, stay out.
 
@@ -99,7 +108,7 @@ def save_blend(scenes, path):
     blocks = set()
     for name in names:
         blocks.add(bpy.data.scenes[name])
-        for action in settings(name)["actions"]:
+        for action in read_settings(name)["actions"]:
             blocks.add(bpy.data.actions[action])
     bpy.data.libraries.write(path, blocks, path_remap="RELATIVE_ALL", fake_user=True, compress=True)
     return path

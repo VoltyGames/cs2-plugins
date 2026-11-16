@@ -1,13 +1,16 @@
 """Shapes as bmesh parts, before they become objects."""
 
 import math
+from collections.abc import Iterable, Sequence
 
 import bmesh
 import bpy
 from mathutils import Matrix, Vector
 
+type Vec3 = tuple[float, float, float] | Vector
 
-def cone(r0, r1, z0, z1, seg=64):
+
+def cone(r0: float, r1: float, z0: float, z1: float, seg: int = 64) -> bmesh.types.BMesh:
     """A capped cylinder or frustum from `z0` to `z1`."""
     bm = bmesh.new()
     bmesh.ops.create_cone(
@@ -23,12 +26,21 @@ def cone(r0, r1, z0, z1, seg=64):
     return bm
 
 
-def tube(r_in, r_out, z0, z1, seg=64):
+def tube(r_in: float, r_out: float, z0: float, z1: float, seg: int = 64) -> bmesh.types.BMesh:
     """A closed ring."""
     return sector(r_in, r_out, 0.0, 360.0, z0, z1, seg, closed=True)
 
 
-def sector(r_in, r_out, a0, a1, z0, z1, seg=6, closed=False):
+def sector(
+    r_in: float,
+    r_out: float,
+    a0: float,
+    a1: float,
+    z0: float,
+    z1: float,
+    seg: int = 6,
+    closed: bool = False,
+) -> bmesh.types.BMesh:
     """A curved block between angles `a0` and `a1` degrees."""
     bm = bmesh.new()
     count = seg if closed else seg + 1
@@ -49,7 +61,7 @@ def sector(r_in, r_out, a0, a1, z0, z1, seg=6, closed=False):
     return bm
 
 
-def prism(points, z0, z1):
+def prism(points: Sequence[tuple[float, float]], z0: float, z1: float) -> bmesh.types.BMesh:
     """A convex outline of (x, y) points extruded from `z0` to `z1`."""
     bm = bmesh.new()
     bottom = [bm.verts.new((x, y, z0)) for x, y in points]
@@ -62,7 +74,7 @@ def prism(points, z0, z1):
     return bm
 
 
-def box(center, size, yaw=0.0):
+def box(center: Vec3, size: Vec3, yaw: float = 0.0) -> bmesh.types.BMesh:
     """A box of `size` (x, y, z) at `center`, turned `yaw` degrees about Z."""
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
@@ -73,31 +85,35 @@ def box(center, size, yaw=0.0):
     return bm
 
 
-def radial_box(radius, angle, size, z0, z1):
+def radial_box(
+    radius: float, angle: float, size: tuple[float, float], z0: float, z1: float
+) -> bmesh.types.BMesh:
     """A box centred `radius` out along `angle` degrees; `size` is (radial, tangential)."""
     a = math.radians(angle)
     center = (radius * math.cos(a), radius * math.sin(a), (z0 + z1) / 2)
     return box(center, (size[0], size[1], z1 - z0), angle)
 
 
-def moved(bm, offset):
+def moved(bm: bmesh.types.BMesh, offset: Vec3) -> bmesh.types.BMesh:
     bmesh.ops.translate(bm, vec=offset, verts=bm.verts)
     return bm
 
 
-def around(radius, angles):
+def around(radius: float, angles: Iterable[float]) -> list[tuple[float, float, float]]:
     """(x, y, 0) offsets at `radius` for each angle in degrees."""
     return [
         (radius * math.cos(math.radians(a)), radius * math.sin(math.radians(a)), 0) for a in angles
     ]
 
 
-def bolts(radius, angles, size, z0, z1):
+def bolts(
+    radius: float, angles: Iterable[float], size: float, z0: float, z1: float
+) -> bmesh.types.BMesh:
     """Hex bolt heads of radius `size` on a circle, one per angle in degrees."""
     return merge(moved(cone(size, size, z0, z1, seg=6), at) for at in around(radius, angles))
 
 
-def merge(bms):
+def merge(bms: Iterable[bmesh.types.BMesh]) -> bmesh.types.BMesh:
     out = bmesh.new()
     for bm in bms:
         mesh = bpy.data.meshes.new("merge")
@@ -108,7 +124,15 @@ def merge(bms):
     return out
 
 
-def spring(radius, wire, turns, z0, z1, steps_per_turn=32, sides=8):
+def spring(
+    radius: float,
+    wire: float,
+    turns: int,
+    z0: float,
+    z1: float,
+    steps_per_turn: int = 32,
+    sides: int = 8,
+) -> tuple[bmesh.types.BMesh, list[float]]:
     """A coil, and per vertex how far along it the vertex is (0 bottom, 1 top), for bind_along."""
     bm = bmesh.new()
     along = []

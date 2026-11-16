@@ -1,6 +1,8 @@
 """The Blender session: its state, the model's scene, opening existing models, and cleanup."""
 
 import os
+from collections.abc import Iterable
+from typing import Any
 
 import addon_utils
 import bpy
@@ -8,7 +10,7 @@ import bpy
 PREVIEW_OBJECTS = ("preview_camera", "preview_sun", "preview_ground")
 
 
-def status():
+def status() -> dict[str, Any]:
     """What the task needs from Blender, and what the user has open."""
     tools = next((m for m in addon_utils.modules() if m.__name__ == "io_scene_valvesource"), None)
     return {
@@ -21,7 +23,7 @@ def status():
     }
 
 
-def scene(name, material_path):
+def scene(name: str, material_path: str) -> bpy.types.Scene:
     """Makes `name` the active scene, emptied except for the preview rig, set up for DMX export.
 
     `material_path` is the model's folder in the addon, e.g. "models/stronghold/jump_pad/".
@@ -39,7 +41,7 @@ def scene(name, material_path):
     return sc
 
 
-def configure_export(sc, material_path):
+def configure_export(sc: bpy.types.Scene, material_path: str) -> None:
     # Older DMX versions make resourcecompiler run dmxconvert, which fails under Program Files.
     sc.vs.dmx_encoding = "9"
     sc.vs.dmx_format = "22"
@@ -47,7 +49,9 @@ def configure_export(sc, material_path):
     sc.vs.export_path = "//"
 
 
-def open_model(blend_path, scenes=None, replace=False):
+def open_model(
+    blend_path: str, scenes: str | list[str] | None = None, replace: bool = False
+) -> bpy.types.Scene:
     """Appends a model's scenes, one per part, and its actions from its .blend into the session.
 
     `scenes` is one name or a list; without it every scene comes in. The user's own file stays
@@ -93,7 +97,9 @@ def open_model(blend_path, scenes=None, replace=False):
     return sc
 
 
-def import_dmx(scene_name, material_path, meshes, animations=()):
+def import_dmx(
+    scene_name: str, material_path: str, meshes: Iterable[str], animations: Iterable[str] = ()
+) -> bpy.types.Scene:
     """Builds an editable scene from a model that has no .blend: its mesh DMX files, then its
     animation DMX files onto the imported armature. Check the result; hulls come in as meshes.
     """
@@ -107,7 +113,7 @@ def import_dmx(scene_name, material_path, meshes, animations=()):
     return sc
 
 
-def remove_scene(name):
+def remove_scene(name: str) -> None:
     """Deletes a scene this task created, such as an imported reference, with its own objects."""
     sc = bpy.data.scenes.get(name)
     if sc is None:
@@ -118,7 +124,7 @@ def remove_scene(name):
     bpy.data.scenes.remove(sc)
 
 
-def purge():
+def purge() -> int:
     """Removes data nothing uses; actions with a fake user stay. Returns how many went."""
     collections = (bpy.data.meshes, bpy.data.images, bpy.data.materials, bpy.data.actions)
     before = sum(len(c) for c in collections)

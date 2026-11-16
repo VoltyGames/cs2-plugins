@@ -17,23 +17,30 @@ user approves.
 
 | Tool | What it does |
 | --- | --- |
-| `scripts/check.py` | Checks the tools outside Blender |
+| `uv run modelkit check` | Checks Blender, Source Tools, Codex, Git LFS and the Workshop Tools |
+| `uv run modelkit audit` | `textures`, `uv`, `compiled` and `triangles`: why a model looks flat or blurry, and what it can lose |
+| `uv run modelkit render` | Renders a whole model at eye level, for concept work |
+| `uv run modelkit icon` | Renders the plugin's store cards from the models, listed in `bake/icons.json` |
+| `uv run modelkit optimize` | Trims triangles, keeping a part's trim only if renders from all round still match |
+| `uv run modelkit particles` | Checks `.vpcf` field names; lists a class's fields and the game's particle textures |
 | `uv run voltmod content compile` | Compiles one model or particle folder and installs it |
-| `scripts/particles.py` | Checks `.vpcf` field names; lists a class's fields and the game's particle textures |
-| `scripts/modelkit/` | The helpers you run inside Blender, below |
+| `tools/modelkit/src/modelkit/blender/` | The helpers you run inside Blender, below |
 | `examples/jump_pad.py` | A skinned, animated prop. Read it before building one |
 | `examples/teleporter.py` | Glow, team colour and FX animations. Read it before adding FX |
 
-| `modelkit` module | For |
+| Module | For |
 | --- | --- |
-| `session` | Status, scenes, opening models, cleanup |
-| `surfaces` | Textures and preview materials |
-| `shapes` | Mesh parts |
-| `objects` | Finishing, joining and editing parts |
-| `rig` | Skeleton and actions |
-| `preview` | Renders and the user's viewport |
-| `source2` | DMX export and the `.blend` |
-| `modeldoc` | `.vmat`, `.vmdl` and `.vpcf` writers; also runs without Blender |
+| `blender.session` | Status, scenes, opening models, cleanup |
+| `blender.surfaces` | Textures and preview materials |
+| `blender.shapes` | Mesh parts |
+| `blender.objects` | Finishing, joining and editing parts |
+| `blender.rig` | Skeleton and actions |
+| `blender.preview` | Renders and the user's viewport |
+| `blender.export` | DMX export and the `.blend` |
+| `source2.modeldoc` | `.vmat`, `.vmdl` and `.vpcf` writers and readers; also runs without Blender |
+
+`modelkit.blender` and `modelkit.source2` run on Blender's Python 3.13: no newer syntax and no
+packages beyond numpy there. The CLI runs on the repository's Python.
 
 One Blender unit is one Source unit; +X is forward and +Z is up. A player is 32 × 32 × 72 units,
 with eyes at 64.
@@ -41,7 +48,7 @@ with eyes at 64.
 ## 1. Check the tools
 
 ```bash
-uv run python .claude/skills/3d-model/scripts/check.py <plugin>
+uv run modelkit check <plugin>
 ```
 
 Then load the kit in Blender:
@@ -49,11 +56,12 @@ Then load the kit in Blender:
 ```python
 import sys
 
-sys.path.insert(0, r"<repo>/.claude/skills/3d-model/scripts")
-import modelkit
+sys.path.insert(0, r"<repo>/tools/modelkit/src")
+import modelkit.blender
 
-modelkit.reload()
-from modelkit import session, surfaces, shapes, objects, rig, preview, source2, modeldoc
+modelkit.blender.reload()
+from modelkit.blender import session, surfaces, shapes, objects, rig, preview, export
+from modelkit.source2 import modeldoc
 
 result = session.status()
 ```
@@ -62,7 +70,7 @@ Stop and tell the user if:
 
 - Blender or its MCP doesn't answer.
 - `source_tools_enabled` is false.
-- `check.py` reports MISSING. Codex only matters for new textures, and a running CS2 only blocks
+- `modelkit check` reports MISSING. Codex only matters for new textures, and a running CS2 only blocks
   installing.
 
 If the user has unsaved changes, work only in the model's own scene.
@@ -73,7 +81,7 @@ If the user has unsaved changes, work only in the model's own scene.
 | --- | --- |
 | A new model | Step 3, then `session.scene(name, "models/<plugin>/<model>/")` |
 | A model with a `.blend` | `session.open_model(<blend>)`, which opens every part's scene |
-| A model with DMX files only, such as a stand-in | `session.import_dmx(scene, folder, meshes, animations)`; check it, then `source2.remember(...)` |
+| A model with DMX files only, such as a stand-in | `session.import_dmx(scene, folder, meshes, animations)`; check it, then `export.remember(...)` |
 | New textures only | Step 4, then step 8 |
 | FX | A glow or a moving part: open or import the model, then steps 5 and 6. A particle effect: [Particles](#particles) |
 
@@ -95,8 +103,28 @@ the code in the same task.
 
 ## 4. Textures
 
-List `~/.codex/generated_images/` before the first run, so cleanup knows which folders are new.
-Then run Codex in the background while you work:
+Prefer a baked set over tiled textures: `uv run modelkit bake <plugin> <model>` unwraps the
+named materials into one atlas, bakes CC0 materials from Poly Haven or ambientCG with worn edges,
+grime, dust and streaks into colour, roughness, metalness, normal and AO maps, and stamps the
+maker's mark. Its recipe is `plugins/<plugin>/bake/<model>.json`; the format is in
+`modelkit/baking.py`, and `plugins/stronghold/bake/wall.json` is a worked one.
+
+- It previews first: renders in `build/bake/<plugin>/<model>/`, the model folder untouched. Show
+  the user, tune the recipe, bake again.
+- `--write` ships the preview: textures and `.vmat` into the model folder, the `.blend` saved,
+  the DMX re-exported, the replaced `.vmat` files and their unused textures deleted. Then compile.
+- Structures get solid weathered paint; recipe colours are linear, as Blender takes them.
+- Keep recipes out of `content/`: `voltmod content compile --prune` deletes files nothing
+  references there.
+- A finish with `"artwork": true` keeps the surface's own colour texture (hazard stripes, signs)
+  and takes only roughness, normal and wear from the library material.
+- After `--write`, re-render the model's store cards: `uv run modelkit icon <plugin> <card>`. A
+  card in `bake/icons.json` names its `model` and may set `view`, `skip`, `at` and `pose`
+  (`{"<scene>": ["<action>", frame]}`, for a part whose idle is a poor picture).
+
+For a texture no CC0 material covers, generate one. List `~/.codex/generated_images/` before the
+first run, so cleanup knows which folders are new. Then run Codex in the background while you
+work:
 
 ```bash
 codex exec --skip-git-repo-check --sandbox workspace-write -C "<scratchpad>/tex" "Use the imagegen skill (built-in image_gen tool) to generate <name>.png: albedo texture for a low-poly CS2 prop; perfectly seamless and tileable on both axes; flat orthographic; evenly lit albedo only (no baked shadows, highlights, perspective or vignette); square 1024x1024; no text, logos or watermark. Subject: <material>. Copy the final image into the current directory as <name>.png."
@@ -144,12 +172,17 @@ before and after.
 - `objects.join` smooth-shades below 35°, so a round part with fewer than 11 sides shades as flat
   facets and reads as a box.
 - Render the same views before and after a trim. Put back anything that reads flatter or boxier.
+- `uv run modelkit audit triangles <plugin> -m <model>` counts degenerate, coplanar and hidden
+  triangles per part. `uv run modelkit optimize <plugin> <model>` trims them in the `.blend` and
+  keeps a part's trim only when ten renders from all round still match; it takes minutes. The
+  hidden-face test misses faces seen through small holes, such as under a grate, so expect the
+  render check to reject those parts. Re-export the DMX and compile after it.
 
 ## 6. Animate
 
 `rig.skeleton` makes the bones and skins the mesh by vertex group. `rig.animate` records an action
 from per-bone `(frame, move, turn)` keys at 30 fps, relative to rest. `rig.eased` fills in the
-frames between keys without overshoot. `source2.remember` saves the export settings in the
+frames between keys without overshoot. `export.remember` saves the export settings in the
 `.blend`.
 
 - **Exaggerate:** a 10-unit lift looked static in game. Crouch, overshoot, then bounce to rest.
@@ -173,9 +206,9 @@ frames between keys without overshoot. `source2.remember` saves the export setti
 ## 8. Export and compile
 
 ```python
-source2.export(scene, model_dir)  # meshes, hull, one DMX per action
+export.write_dmx(scene, model_dir)  # meshes, hull, one DMX per action
 # every part's scene; Git LFS, not the compile
-source2.save_blend(scenes, model_dir + "/<folder>.blend")
+export.save_blend(scenes, model_dir + "/<folder>.blend")
 modeldoc.write_vmat(...)  # only for new or changed materials
 modeldoc.write_vmdl(...)  # only when meshes, animations, groups or attachments change
 ```
@@ -186,7 +219,7 @@ Stop the CS2 server and client first; installing into a running game fails.
 uv run voltmod content compile <plugin> models/<plugin>/<model> --install client --install server
 ```
 
-- `export` refuses `.001` materials and leaves object references stale, so look objects up by
+- `export.write_dmx` refuses `.001` materials and leaves object references stale, so look objects up by
   name afterwards.
 - `voltmod content compile` mirrors the folder from the plugin's `content/` into the Workshop
   Tools content folder, recompiles it from scratch and copies the result to each install target.
@@ -237,13 +270,13 @@ live in the model, while an effect is a separate file the plugin must spawn, pre
    built from `modeldoc.op(...)` operators. A team variant is its own file; a part several effects
    share is a child.
 2. **Check the field names.** `resourcecompiler` silently drops fields it doesn't know, so a typo
-   compiles into an effect without that setting. `particles.py fields <class>` prints the real
+   compiles into an effect without that setting. `uv run modelkit particles fields <class>` prints the real
    names: `C_INIT_RandomLifeTime` takes `m_fLifetimeMin`, not `m_flLifetimeMin`.
-3. **Check, then compile and install.** Fix every field `particles.py check` reports before
+3. **Check, then compile and install.** Fix every field `modelkit particles check` reports before
    compiling:
 
    ```bash
-   uv run python .claude/skills/3d-model/scripts/particles.py check plugins/<plugin>/content/particles/<plugin>/<effect>/*.vpcf
+   uv run modelkit particles check plugins/<plugin>/content/particles/<plugin>/<effect>/*.vpcf
    uv run voltmod content compile <plugin> particles/<plugin>/<effect> --install client --install server
    ```
 
@@ -256,10 +289,10 @@ live in the model, while an effect is a separate file the plugin must spawn, pre
    `StructureAssets` loops at a structure's origin.
 
 - **Textures:** use the game's own, such as `materials/particle/particle_glow_01.vtex` (soft
-  glow), `beam_hotwhite.vtex` (streaks) or `sparks/sparks.vtex`. `particles.py textures <word>`
+  glow), `beam_hotwhite.vtex` (streaks) or `sparks/sparks.vtex`. `uv run modelkit particles textures <word>`
   lists them.
 - **Schema dump:** the field checks read `references/swiftlys2`, which is local only. Without it,
-  `particles.py check` stops with `no schema dump`; compile unchecked then.
+  `modelkit particles check` stops with `no schema dump`; compile unchecked then.
 - **On an existing model:** measure the point in Blender, from the `.blend` or
   `session.import_dmx`, and spawn the effect at the prop's origin plus that offset, turned by its
   yaw (Stronghold's `OffsetByYaw`). The effect won't follow a moving part; animate a glowing part

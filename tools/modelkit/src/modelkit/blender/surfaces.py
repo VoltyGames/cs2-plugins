@@ -4,11 +4,14 @@ import os
 
 import bpy
 import numpy as np
+from numpy.typing import NDArray
 
 SIZE = 1024
 
+type Pixels = NDArray[np.float32]
 
-def load_pixels(path, size=SIZE):
+
+def load_pixels(path: str, size: int | None = SIZE) -> Pixels:
     """RGBA float pixels of the image at `path`, scaled to `size` square. Rows run bottom-up."""
     img = bpy.data.images.load(path, check_existing=False)
     if size and tuple(img.size) != (size, size):
@@ -18,7 +21,7 @@ def load_pixels(path, size=SIZE):
     return px
 
 
-def save_pixels(path, px, data=False):
+def save_pixels(path: str, px: Pixels, data: bool = False) -> bpy.types.Image:
     """Writes `px` as a PNG to `path` and returns it as an image; `data` marks a normal map."""
     name = os.path.basename(path)
     height, width = px.shape[:2]
@@ -37,7 +40,7 @@ def save_pixels(path, px, data=False):
     return img
 
 
-def image(path, data=False):
+def image(path: str, data: bool = False) -> bpy.types.Image:
     """Loads an existing PNG for a preview material."""
     img = bpy.data.images.load(path, check_existing=True)
     if data:
@@ -45,7 +48,7 @@ def image(path, data=False):
     return img
 
 
-def normal_from(px, strength):
+def normal_from(px: Pixels, strength: float) -> Pixels:
     """A tileable normal map, height from brightness. Green points up the texture (OpenGL).
 
     Around 1.5 suits painted metal; 10 suits raised patterns such as tread plate.
@@ -60,18 +63,20 @@ def normal_from(px, strength):
     return out
 
 
-def brightened(px, factor):
+def brightened(px: Pixels, factor: float) -> Pixels:
     out = px.copy()
     out[..., :3] = np.clip(out[..., :3] * factor, 0, 1)
     return out
 
 
-def solid(path, rgb, size=16):
+def solid(path: str, rgb: tuple[float, float, float], size: int = 16) -> bpy.types.Image:
     """A flat colour texture, for glow colours and self-illum masks."""
     return save_pixels(path, np.tile(np.array([*rgb, 1], dtype=np.float32), (size, size, 1)))
 
 
-def replace_texture(source, color_path, normal_path=None, strength=1.5):
+def replace_texture(
+    source: str, color_path: str, normal_path: str | None = None, strength: float = 1.5
+) -> Pixels:
     """Installs a generated texture as `color_path`, with a matching normal map when asked.
 
     Keeping the file names keeps every .vmat valid; open previews pick the change up.
@@ -84,13 +89,20 @@ def replace_texture(source, color_path, normal_path=None, strength=1.5):
     return px
 
 
-def reload_images():
+def reload_images() -> None:
     for img in bpy.data.images:
         if img.filepath:
             img.reload()
 
 
-def material(name, color=None, normal=None, metallic=0.7, roughness=0.5, glow=None):
+def material(
+    name: str,
+    color: bpy.types.Image | None = None,
+    normal: bpy.types.Image | None = None,
+    metallic: float = 0.7,
+    roughness: float = 0.5,
+    glow: bool | tuple[float, float, float] | None = None,
+) -> bpy.types.Material:
     """A Blender material named like the game's, e.g. "jump_pad_body.vmat".
 
     The DMX records only the name; the game look comes from the .vmat. `glow` is a flat glow
@@ -107,18 +119,21 @@ def material(name, color=None, normal=None, metallic=0.7, roughness=0.5, glow=No
     bsdf.inputs["Metallic"].default_value = metallic
     bsdf.inputs["Roughness"].default_value = roughness
     bsdf.inputs["Emission Strength"].default_value = 0.0
+    color_node = None
     if color is not None:
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.image = color
-        links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+        color_node = nodes.new("ShaderNodeTexImage")
+        color_node.image = color
+        links.new(color_node.outputs["Color"], bsdf.inputs["Base Color"])
     if normal is not None:
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.image = normal
+        normal_node = nodes.new("ShaderNodeTexImage")
+        normal_node.image = normal
         normal_map = nodes.new("ShaderNodeNormalMap")
-        links.new(tex.outputs["Color"], normal_map.inputs["Color"])
+        links.new(normal_node.outputs["Color"], normal_map.inputs["Color"])
         links.new(normal_map.outputs["Normal"], bsdf.inputs["Normal"])
     if glow is True:
-        links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
+        if color_node is None:
+            raise ValueError("glow=True glows with the colour texture; pass `color`")
+        links.new(color_node.outputs["Color"], bsdf.inputs["Emission Color"])
         bsdf.inputs["Emission Strength"].default_value = 1.2
     elif glow is not None:
         bsdf.inputs["Base Color"].default_value = (*glow, 1)

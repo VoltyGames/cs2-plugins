@@ -1,0 +1,39 @@
+[project]
+name = "modelkit"
+version = "1.0.0"
+description = "Build, audit and check Source 2 props for the plugins' workshop addons"
+requires-python = ">=3.15"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=2.5.5",
+    "pillow>=13.0.0",
+    "python-dotenv>=1.2.4",
+    "rich>=15.0.0",
+    "typer>=0.29.1",
+]
+
+[project.scripts]
+modelkit = "modelkit.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=9.2.0"]
+
+[build-system]
+requires = ["uv_build>=0.12.18,<0.13"]
+build-backend = "uv_build"
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+# Blender loads these with its bundled Python 3.13.
+per-file-target-version = { "src/modelkit/blender/**" = "py313", "src/modelkit/source2/**" = "py313" }
+
+[tool.ruff.lint]
+# Every function and argument typed; Any where a value really is anything.
+extend-select = ["TID252", "ANN"]
+ignore = ["ANN401"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

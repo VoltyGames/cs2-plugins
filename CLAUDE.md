@@ -30,6 +30,8 @@ uv run poe install                           # copy every built plugin; name one
 uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
 uv run poe meatgg-addon                      # build the meatgg workshop addon: every screen, Stronghold content, rank icons
 uv run poe new-plugin <name>
+uv run modelkit <command>                    # check, audit, bake, render, icon and trim workshop models; see the 3d-model skill
+uv run --package modelkit pytest tools/modelkit   # modelkit's tests
 ```
 
 Output: `build/<preset>/plugins/<name>/<platform-arch>/`. Compiling needs an MSVC dev
@@ -55,6 +57,7 @@ contracts/             Interfaces shared between plugins (header-only, not a plu
 deploy/                Deploy CLI for panel servers and Docker hosts
 workshop/              Builds the meatgg workshop addon; meatgg/ holds compiled files copied in as they are
 docs/                  Development and deployment notes
+tools/modelkit/        Model CLI and Blender helpers (Typer; blender/ and source2/ also run on Blender's Python 3.13)
 ```
 
 A plugin owns `plugin.json` (name, version, log tag, dependencies), `src/`, `tests/`, `configs/`

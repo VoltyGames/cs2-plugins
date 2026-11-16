@@ -1,13 +1,16 @@
 """Scene objects: finishing parts, joining them into the model, and editing a joined mesh."""
 
 import math
+from collections.abc import Iterable, Sequence
 
 import bmesh
 import bpy
 from mathutils import Vector
 
+type Vec3 = tuple[float, float, float] | Vector
 
-def to_object(name, bm):
+
+def to_object(name: str, bm: bmesh.types.BMesh) -> bpy.types.Object:
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
@@ -17,7 +20,7 @@ def to_object(name, bm):
     return ob
 
 
-def apply_modifiers(ob):
+def apply_modifiers(ob: bpy.types.Object) -> None:
     bpy.ops.object.select_all(action="DESELECT")
     ob.select_set(True)
     bpy.context.view_layer.objects.active = ob
@@ -25,7 +28,7 @@ def apply_modifiers(ob):
         bpy.ops.object.modifier_apply(modifier=mod.name)
 
 
-def cut(ob, cutter_bm):
+def cut(ob: bpy.types.Object, cutter_bm: bmesh.types.BMesh) -> bpy.types.Object:
     """Subtracts `cutter_bm` from `ob`, e.g. vent slots."""
     cutter = to_object(ob.name + "_cutter", cutter_bm)
     mod = ob.modifiers.new("cut", "BOOLEAN")
@@ -37,7 +40,7 @@ def cut(ob, cutter_bm):
     return ob
 
 
-def box_uv(bm, size):
+def box_uv(bm: bmesh.types.BMesh, size: float) -> None:
     """Projects each face along its main axis; `size` is world units per texture repeat."""
     uv = bm.loops.layers.uv.verify()
     for face in bm.faces:
@@ -48,7 +51,13 @@ def box_uv(bm, size):
             loop[uv].uv = (loop.vert.co[a] / size, loop.vert.co[b] / size)
 
 
-def finish(ob, mat, bone, uv_size=48.0, bevel=0.0):
+def finish(
+    ob: bpy.types.Object,
+    mat: bpy.types.Material,
+    bone: str,
+    uv_size: float = 48.0,
+    bevel: float = 0.0,
+) -> bpy.types.Object:
     """Bevels hard edges, projects UVs, sets the material and binds every vertex to `bone`."""
     if bevel:
         mod = ob.modifiers.new("bevel", "BEVEL")
@@ -68,7 +77,9 @@ def finish(ob, mat, bone, uv_size=48.0, bevel=0.0):
     return ob
 
 
-def bind_along(ob, along, bottom, top):
+def bind_along(
+    ob: bpy.types.Object, along: Iterable[float], bottom: str, top: str
+) -> bpy.types.Object:
     """Rebinds a finished spring so each vertex blends from `bottom` to `top` along the coil."""
     ob.vertex_groups.clear()
     low = ob.vertex_groups.new(name=bottom)
@@ -79,7 +90,9 @@ def bind_along(ob, along, bottom, top):
     return ob
 
 
-def join(parts, name, smooth_degrees=35):
+def join(
+    parts: Sequence[bpy.types.Object], name: str, smooth_degrees: float = 35
+) -> bpy.types.Object:
     """Joins `parts` into the first of them, renamed `name` and smooth-shaded."""
     bpy.ops.object.select_all(action="DESELECT")
     for ob in parts:
@@ -93,7 +106,7 @@ def join(parts, name, smooth_degrees=35):
     return body
 
 
-def hull(name, bm, mat):
+def hull(name: str, bm: bmesh.types.BMesh, mat: bpy.types.Material) -> bpy.types.Object:
     """A static physics hull; hidden in renders, exported as its own DMX."""
     ob = finish(to_object(name, bm), mat, "root")
     ob.hide_render = True
@@ -101,7 +114,9 @@ def hull(name, bm, mat):
     return ob
 
 
-def vertices(ob, material=None, bone=None):
+def vertices(
+    ob: bpy.types.Object, material: str | None = None, bone: str | None = None
+) -> list[int]:
     """Indices of `ob`'s vertices on faces with `material` and/or bound to `bone`."""
     chosen = set(range(len(ob.data.vertices)))
     if material is not None:
@@ -117,7 +132,13 @@ def vertices(ob, material=None, bone=None):
     return sorted(chosen)
 
 
-def transform(ob, indices, move=(0, 0, 0), scale=1.0, pivot=(0, 0, 0)):
+def transform(
+    ob: bpy.types.Object,
+    indices: Iterable[int],
+    move: Vec3 = (0, 0, 0),
+    scale: float = 1.0,
+    pivot: Vec3 = (0, 0, 0),
+) -> None:
     """Scales the chosen vertices about `pivot`, then moves them; for editing a joined mesh."""
     pivot = Vector(pivot)
     for index in indices:
@@ -126,6 +147,6 @@ def transform(ob, indices, move=(0, 0, 0), scale=1.0, pivot=(0, 0, 0)):
     ob.data.update()
 
 
-def replace_material(ob, old, new):
+def replace_material(ob: bpy.types.Object, old: str, new: bpy.types.Material) -> None:
     """Points the faces using material `old` at `new`, e.g. a renamed .vmat."""
     ob.data.materials[ob.data.materials.find(old)] = new

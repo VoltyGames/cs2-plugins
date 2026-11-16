@@ -1,12 +1,20 @@
 """The skeleton and its actions."""
 
 import math
+from collections.abc import Iterable, Sequence
 
 import bpy
 from mathutils import Euler, Matrix, Vector
 
+type Vec3 = tuple[float, float, float] | Vector
+type Key = tuple[float, Vec3, tuple[float, float, float]]
 
-def skeleton(name, bones, meshes):
+
+def skeleton(
+    name: str,
+    bones: Iterable[tuple[str, Vec3, Vec3, str | None]],
+    meshes: Iterable[bpy.types.Object],
+) -> bpy.types.Object:
     """Creates the armature `name` and skins `meshes` to it.
 
     `bones` is a list of (name, head, tail, parent or None), parents first. A mesh's vertex
@@ -32,7 +40,7 @@ def skeleton(name, bones, meshes):
     return arm
 
 
-def animate(arm, name, tracks):
+def animate(arm: bpy.types.Object, name: str, tracks: dict[str, Iterable[Key]]) -> bpy.types.Action:
     """Records the action `name` on `arm`, replacing one of that name, and returns it.
 
     `tracks` maps a bone to keys (frame, (dx, dy, dz), (rx, ry, rz) degrees): a move and a turn
@@ -59,7 +67,7 @@ def animate(arm, name, tracks):
     return action
 
 
-def eased(keys):
+def eased(keys: Sequence[tuple[int, float]]) -> list[tuple[int, float]]:
     """(frame, value) for each frame through `keys`, never overshooting them (monotone cubic)."""
     frames, values = zip(*keys)
     steps = [b - a for a, b in zip(frames, frames[1:])]
@@ -81,7 +89,7 @@ def eased(keys):
     return samples
 
 
-def show(arm, action, frame=0):
+def show(arm: bpy.types.Object, action: str, frame: int = 0) -> None:
     """Poses `arm` at `frame` of `action`, with the timeline spanning just that action."""
     chosen = bpy.data.actions[action]
     arm.animation_data.action = chosen

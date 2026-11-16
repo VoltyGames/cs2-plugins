@@ -1,16 +1,19 @@
 """Showing the model: the user's viewport, renders and contact sheets."""
 
 import math
+from collections.abc import Iterable
 
 import bpy
 import numpy as np
 from mathutils import Vector
 
-from . import objects, shapes, surfaces
-from .session import PREVIEW_OBJECTS
+from modelkit.blender import objects, shapes, surfaces
+from modelkit.blender.session import PREVIEW_OBJECTS
+
+type Vec3 = tuple[float, float, float] | Vector
 
 
-def stage():
+def stage() -> None:
     """Adds a camera, a sun, a grey world and an unexported ground plane when missing.
 
     Scenes share the preview objects: a second copy would be renamed and lose its lookup name.
@@ -47,7 +50,7 @@ def stage():
     sc.render.engine = "BLENDER_EEVEE"
 
 
-def render(path, eye, look_at, size=(900, 600)):
+def render(path: str, eye: Vec3, look_at: Vec3, size: tuple[int, int] = (900, 600)) -> str:
     """Renders from `eye` looking at `look_at` to a PNG.
 
     A player sees a floor prop from about 64 units up and 60 to 80 away.
@@ -62,7 +65,7 @@ def render(path, eye, look_at, size=(900, 600)):
     return path
 
 
-def contact_sheet(paths, out, columns=2):
+def contact_sheet(paths: Iterable[str], out: str, columns: int = 2) -> str:
     """Tiles equally sized renders into one PNG, left to right then top to bottom."""
     tiles = [surfaces.load_pixels(p, size=None) for p in paths]
     while len(tiles) % columns:
@@ -78,7 +81,7 @@ def contact_sheet(paths, out, columns=2):
     return out
 
 
-def frame_viewport(object_name):
+def frame_viewport(object_name: str) -> None:
     """Shows the user `object_name` in Material Preview in their 3D view."""
     window = bpy.context.window_manager.windows[0]
     window.scene = bpy.context.scene
