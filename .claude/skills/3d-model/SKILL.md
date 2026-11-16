@@ -102,29 +102,24 @@ the code in the same task.
 
 ## 4. Textures
 
-Prefer a baked set over tiled textures: `uv run modelkit bake <plugin> <model>` unwraps the
-named materials into one atlas, bakes CC0 materials from Poly Haven or ambientCG with worn edges,
+`uv run modelkit bake <plugin> <model>` retextures a model: it unwraps the named materials
+into one atlas per part and bakes CC0 materials from Poly Haven or ambientCG with worn edges,
 grime, dust and streaks into colour, roughness, metalness and normal maps (no AO map: the game
-shadows the model itself), and stamps the
-maker's mark. Its recipe is `plugins/<plugin>/bake/<model>.json`, over the shared finishes and
-mark in `bake/defaults.json`; the format is in `modelkit/recipe.py`, and
-`plugins/stronghold/bake/wall.json` is a worked one.
+shadows the model itself). Its recipe is `plugins/<plugin>/bake/<model>.json`; the format is in
+`modelkit/recipe.py`.
 
+- Stronghold keeps its hand-made textures: baked sets read washed out, and small, bevelled parts
+  split into many atlas islands that show seams in game. Bake only a new model the user asks for.
 - It previews first: renders in `build/bake/<plugin>/<model>/`, the model folder untouched. Show
   the user, tune the recipe, bake again.
 - `--write` ships the preview: textures and `.vmat` into the model folder, the `.blend` saved,
   the DMX re-exported, the replaced `.vmat` files and their unused textures deleted. Then compile.
-- Structures get solid olive drab with light wear (the shared `olive_drab` finish; tweak it per
-  recipe with `{"extends": "olive_drab", ...}`): keep grime, dust and streaks near 0.1 and
-  `normal_strength` at its 0.5 default, since heavier weathering reads as noise in game. Recipe colours are linear, as Blender takes them.
+- Keep grime, dust and streaks near 0.1 and `normal_strength` at its 0.5 default: heavier
+  weathering reads as noise in game. Recipe colours are linear, as Blender takes them.
 - Leave `size` out: each part bakes at the smallest of 512, 1024 and 2048 reaching 12 pixels per
   game unit. Props seen up close set `"density": 16`.
 - To re-bake a model whose `.blend` already holds its baked material, pass
   `--source <revision>`: a commit of the plugin's repo from before its first bake.
-- Models with hand-made single-atlas textures (tank, watchtower, helicopters and the rest
-  without a baked recipe) keep them: re-baking them read flatter and blurrier in game. Their
-  recipe holds only `marks`, and `uv run modelkit mark <plugin> <model>` stamps those onto the
-  existing colour texture once.
 - Keep recipes out of `content/`: `voltmod content compile --prune` deletes files nothing
   references there.
 - A finish with `"artwork": true` keeps the surface's own colour texture (hazard stripes, signs)

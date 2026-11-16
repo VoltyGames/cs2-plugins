@@ -1,4 +1,4 @@
-"""A part's bake atlas: its UV layer, the faces it covers and where a mark lands on it."""
+"""A part's bake atlas: its UV layer and the faces it covers."""
 
 from collections.abc import Collection
 from typing import Any
@@ -6,9 +6,6 @@ from typing import Any
 import bmesh
 import bpy
 import numpy as np
-from mathutils import Vector
-from mathutils.bvhtree import BVHTree
-from mathutils.geometry import barycentric_transform
 from numpy.typing import NDArray
 
 from modelkit.blender import measure
@@ -149,54 +146,3 @@ def make_bake_copy(ob: bpy.types.Object, materials: Collection[str]) -> bpy.type
     bm.to_mesh(copy.data)
     bm.free()
     return copy
-
-
-class MarkPlacer:
-    """Finds where marks land in one part's UV layer: the UV under a point on the surface, and
-    the UV step for one unit right and up along the face there."""
-
-    def __init__(self, ob: bpy.types.Object, uv_name: str = ATLAS_UV) -> None:
-        self.ob = ob
-        self.mesh = ob.data
-        self.layer = self.mesh.uv_layers[uv_name]
-        self.mesh.calc_loop_triangles()
-        self.trees: dict[str | None, tuple[BVHTree, list[bpy.types.MeshLoopTriangle]]] = {}
-
-    def find_tree(self, surface: str | None) -> tuple[BVHTree, list[bpy.types.MeshLoopTriangle]]:
-        if surface not in self.trees:
-            tris = [
-                tri
-                for tri in self.mesh.loop_triangles
-                if surface is None or self.mesh.materials[tri.material_index].name == surface
-            ]
-            if not tris:
-                raise ValueError(f"no faces of {surface} on {self.ob.name} for a mark")
-            corners = [v.co for v in self.mesh.vertices]
-            self.trees[surface] = (BVHTree.FromPolygons(corners, [t.vertices for t in tris]), tris)
-        return self.trees[surface]
-
-    def place(
-        self, point: list[float], surface: str | None = None, along: list[float] | None = None
-    ) -> dict[str, Any]:
-        """`surface`, a material name, keeps the mark on its faces; `along` turns the text,
-        which otherwise runs level across the face."""
-        tree, tris = self.find_tree(surface)
-        target = self.ob.matrix_world.inverted() @ Vector(point)
-        on_face, _, index, _ = tree.find_nearest(target)
-        nearest = tris[index]
-        corners = [self.mesh.vertices[v].co for v in nearest.vertices]
-        uvs = [self.layer.data[loop].uv.to_3d() for loop in nearest.loops]
-        right = Vector(along) if along else Vector((0, 0, 1)).cross(nearest.normal)
-        right = right.normalized() if right.length > 1e-3 else Vector((1, 0, 0))
-        up = nearest.normal.cross(right).normalized()
-
-        def to_uv(position: Vector) -> Vector:
-            return barycentric_transform(position, *corners, *uvs).to_2d()
-
-        origin = to_uv(on_face)
-        return {
-            "uv": list(origin),
-            "right": list(to_uv(on_face + right) - origin),
-            "up": list(to_uv(on_face + up) - origin),
-            "material": self.mesh.materials[nearest.material_index].name,
-        }

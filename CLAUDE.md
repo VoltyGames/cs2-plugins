@@ -30,7 +30,7 @@ uv run poe install                           # copy every built plugin; name one
 uv run poe panorama                          # render, compile and install the Panorama screens into your client (Windows)
 uv run poe meatgg-addon                      # build the meatgg workshop addon: every screen, Stronghold content, rank icons
 uv run poe new-plugin <name>
-uv run modelkit <command>                    # check, audit, bake, mark, render and trim workshop models; see the 3d-model skill
+uv run modelkit <command>                    # check, audit, bake, render and trim workshop models; see the 3d-model skill
 uv run --package modelkit pytest tools/modelkit   # modelkit's tests
 ```
 

@@ -83,15 +83,6 @@ def bake(
 
 
 @app.command()
-def mark(plugin: PluginArgument, model: ModelArgument) -> None:
-    """Stamp the recipe's maker's marks onto a model's own textures, without a bake. Run it
-    once: a second run presses the marks in again."""
-    for path in ModelBake(plugin, model).stamp_marks():
-        console.info(f"stamped {path}")
-    show_compile_hint(plugin, model)
-
-
-@app.command()
 def optimize(
     plugin: PluginArgument,
     model: ModelArgument,

@@ -12,11 +12,10 @@ from pathlib import Path, PurePosixPath
 
 from modelkit import game, headless
 from modelkit.git_files import export_folder
-from modelkit.marks import Mark
 from modelkit.models import ModelFolder
 from modelkit.recipe import SIZES, Recipe
 from modelkit.source2 import vmat
-from modelkit.texture_set import TextureSet, stamp_texture
+from modelkit.texture_set import TextureSet
 
 # Pixels kept free along the atlas's top edge for the hidden mark: the bake's 12-pixel margin
 # spills into it, and the mark needs clear rows beyond that.
@@ -42,10 +41,12 @@ class ModelBake:
         return Recipe.load(self.plugin, self.folder.name)
 
     def extract_source(self, revision: str) -> Path:
-        """The model's .blend as it was at `revision` of the plugin's repo, for re-baking a model
-        whose .blend already holds its baked material."""
+        """The model folder as it was at `revision` of the plugin's repo, in the scratch folder;
+        returns its .blend."""
         folder = PurePosixPath("content", "models", self.plugin, self.folder.name)
         into = self.scratch / "source"
+        if into.exists():
+            shutil.rmtree(into)
         export_folder(game.plugin_dir(self.plugin), folder, revision, into)
         blend = into / self.folder.blend.name
         if not blend.is_file():
@@ -56,6 +57,8 @@ class ModelBake:
         """Bakes the recipe; `source`, a revision of the plugin's repo, bakes from the model's
         .blend as it was then."""
         recipe = self.recipe
+        if not recipe.parts:
+            raise ValueError(f"the {self.folder.name} recipe has no parts to bake")
         if self.scratch.exists():
             shutil.rmtree(self.scratch)
         (self.scratch / "raw").mkdir(parents=True)
@@ -74,7 +77,6 @@ class ModelBake:
                 for part in recipe.parts
             },
             finishes=recipe.resolve_finishes(),
-            marks=recipe.marks,
             folder=str(self.scratch / "raw"),
             save_to=str(self.baked_blend),
             sizes=[size for size in SIZES if size <= largest] or [largest],
@@ -84,7 +86,6 @@ class ModelBake:
         for part in recipe.parts:
             result = baked["parts"][part.name]
             texture_set = TextureSet(result["files"])
-            texture_set.stamp(Mark.from_frame(frame) for frame in result["frames"])
             if recipe.hidden_mark:
                 texture_set.hide(recipe.hidden_mark)
             written = texture_set.save(self.scratch / "final", part.stem)
@@ -176,20 +177,3 @@ class ModelBake:
             *shipped["exported"],
             *(f"removed {p}" for p in removed),
         ]
-
-    def stamp_marks(self) -> list[str]:
-        """Stamps the recipe's marks onto the model's own colour textures, with no bake. A
-        second run presses the marks in again."""
-        placed = headless.run_job("mark", self.folder.blend, marks=self.recipe.marks)
-        rough_textures = {
-            m.name: m.find_detailed_texture("TextureRoughness") for m in self.folder.materials
-        }
-        by_image = defaultdict(list)
-        for frame in placed:
-            by_image[frame["image"], rough_textures.get(frame["material"])].append(
-                Mark.from_frame(frame)
-            )
-        stamped = []
-        for (image, rough), marks in by_image.items():
-            stamped += [str(path) for path in stamp_texture(Path(image), rough, marks)]
-        return stamped

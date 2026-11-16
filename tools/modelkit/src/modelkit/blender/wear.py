@@ -72,9 +72,19 @@ class WornMaterial(Nodes):
             color = shift.outputs["Color"]
         if tint := self.finish.get("tint"):
             color = self.mix("RGBA", 1.0, color, (*tint, 1.0), blend="MULTIPLY")
+        if paint := self.finish.get("paint"):
+            color = self.overlay_grain((*paint, 1.0), color, self.finish.get("grain", 0.6))
         if camo := self.finish.get("camo"):
             color = self.paint_camo(camo, color)
         return color
+
+    def overlay_grain(self, top: Value, paint: Value, amount: float, gain: float = 1.8) -> Socket:
+        """`top` with the base paint's light and dark overlaid at `amount`."""
+        grey = self.add("ShaderNodeRGBToBW")
+        self.feed(grey, "Color", paint)
+        # Painted metal sits near 0.28 grey: lift it to mid grey so only its grain shows.
+        grain = self.math("MULTIPLY", grey.outputs["Val"], gain, clamp=True)
+        return self.mix("RGBA", amount, top, grain, blend="OVERLAY")
 
     def paint_camo(self, camo: dict[str, Any], paint: Value) -> Socket:
         """Hard-edged blobs of the camo colours with the paint's grain overlaid."""
@@ -96,13 +106,8 @@ class WornMaterial(Nodes):
             stop.position = spread.inv_cdf(index / len(colors)) if index else 0.0
             stop.color = (*color, 1.0)
         self.feed(ramp, "Fac", blobs)
-        grey = self.add("ShaderNodeRGBToBW")
-        self.feed(grey, "Color", paint)
-        # Painted metal sits near 0.28 grey: lift it to mid grey so only its grain shows.
-        grain = self.math("MULTIPLY", grey.outputs["Val"], camo.get("grain_gain", 1.8), clamp=True)
-        return self.mix(
-            "RGBA", camo.get("detail", 0.6), ramp.outputs["Color"], grain, blend="OVERLAY"
-        )
+        gain = camo.get("grain_gain", 1.8)
+        return self.overlay_grain(ramp.outputs["Color"], paint, camo.get("detail", 0.6), gain)
 
     def edge_wear(self) -> Socket:
         """Where a bevelled normal leaves the shading one, made ragged by noise."""

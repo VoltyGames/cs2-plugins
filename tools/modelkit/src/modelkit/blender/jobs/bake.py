@@ -6,6 +6,7 @@ import os
 from typing import Any
 
 import bpy
+import numpy as np
 
 from modelkit.blender import atlas, export
 from modelkit.blender.cycles import bake_texture_set, use_fastest_device
@@ -21,6 +22,17 @@ def choose_size(density: float, target: float, sizes: list[int]) -> int:
     """The smallest atlas size giving `target` pixels per unit, `density` being the atlas's
     pixels per unit per pixel of width; the largest when none does."""
     return next((size for size in sizes if density * size >= target), sizes[-1])
+
+
+def add_sharp_edges(mesh: bpy.types.Mesh, angle: float) -> None:
+    """Marks edges sharper than `angle` sharp, keeping the edges already marked."""
+    marked = np.zeros(len(mesh.edges), dtype=bool)
+    if existing := mesh.attributes.get("sharp_edge"):
+        existing.data.foreach_get("value", marked)
+    mesh.set_sharp_from_angle(angle=angle)
+    sharp = np.zeros(len(mesh.edges), dtype=bool)
+    mesh.attributes["sharp_edge"].data.foreach_get("value", sharp)
+    mesh.attributes["sharp_edge"].data.foreach_set("value", sharp | marked)
 
 
 class PartBake:
@@ -39,7 +51,7 @@ class PartBake:
     def unwrap(self, sizes: list[int], reserve: int) -> tuple[int, float]:
         """Makes the atlas; returns its size and its pixels per unit per pixel of width."""
         # A smooth-shaded flat panel averages its normals with its side walls and shades dark.
-        self.ob.data.set_sharp_from_angle(angle=SHARP_ANGLE)
+        add_sharp_edges(self.ob.data, SHARP_ANGLE)
         atlas.make_atlas(self.ob, self.surfaces)
         density = atlas.measure_density(self.ob, self.surfaces)
         size = self.part.get("size") or choose_size(density, self.part["density"], sizes)
@@ -61,14 +73,6 @@ class PartBake:
         bpy.data.objects.remove(copy, do_unlink=True)
         return files
 
-    def place_marks(self, marks: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        placer = atlas.MarkPlacer(self.ob)
-        mine = [mark for mark in marks if mark.get("part", self.ob.name) == self.ob.name]
-        return [
-            {**mark, **placer.place(mark["at"], mark.get("surface"), mark.get("right"))}
-            for mark in mine
-        ]
-
     def adopt_material(self, others: set[str]) -> None:
         """Gives the baked faces the part's new material and keeps only the atlas UVs. Hulls
         and other unbaked objects in the scene follow; other parts bake their own surfaces."""
@@ -87,7 +91,6 @@ class PartBake:
 def main(
     parts: dict[str, dict[str, Any]],
     finishes: dict[str, dict[str, Any]],
-    marks: list[dict[str, Any]],
     folder: str,
     save_to: str,
     sizes: list[int],
@@ -104,7 +107,6 @@ def main(
         size, per_pixel = bake.unwrap(sizes, reserve)
         results[bake.ob.name] = {
             "files": bake.bake(size, folder, device),
-            "frames": bake.place_marks(marks),
             "pixels_per_unit": per_pixel * size,
         }
         bake.adopt_material(set(parts))

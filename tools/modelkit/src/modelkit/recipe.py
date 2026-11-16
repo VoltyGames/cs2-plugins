@@ -6,23 +6,19 @@ bake/defaults.json. Recipes stay out of content/, which `voltmod content compile
       "parts": {"<object>": {"material": "<new>.vmat", "surfaces": {"<old>.vmat": "<finish>"},
                              "density": 16}},
       "finishes": {"<finish>": {...}},    on top of the shared ones; "extends" copies one
-      "marks": [{"part": "<object>", "at": [x, y, z], "height": 1.2}],
-      "hidden_mark": false,               a baked atlas carries the shared mark text unless off
+      "hidden_mark": "<text>",            written into the atlas band no face uses
       "at": {"<scene>": [x, y, z]}        parts the plugin stacks in code, for the preview
     }
 
-defaults.json holds `finishes` and the `mark` every recipe mark starts from (`text`, `style`
-"stamp" or "stencil", `height`). A mark's `at` is a point in Blender units on the face to stamp;
-`surface`, an old .vmat name, keeps it on that material's faces, and `right` turns the text.
+defaults.json, when present, holds `finishes` every recipe can use.
 
 A finish: `base` and `under` ("polyhaven:<id>" or "ambientcg:<id>") are the surface and what
 its worn edges show; `tile` is game units per repeat; `blend` (0.25) softens box-projection
-seams; `hue_shift`, `saturation` and `tint` recolour the base and `camo` ({"colors", "scale",
-"detail"}, linear colour) paints over it; `artwork: true` keeps the surface's own colour texture;
+seams; `hue_shift`, `saturation` and `tint` recolour the base; `paint` ([r, g, b], linear) is
+a solid colour keeping `grain` (0.6) of the base's grain, and `camo` ({"colors", "scale",
+"detail"}) blobs of colour; `artwork: true` keeps the surface's own colour texture;
 `metallic` overrides metalness; `wear`, `grime`, `dust`, `streaks` run 0-1; `normal_strength`
 defaults to 0.5.
-
-A model that keeps its own textures has a recipe of only `marks`, stamped by `modelkit mark`.
 """
 
 import json
@@ -69,7 +65,6 @@ class Part:
 class Recipe:
     parts: list[Part]
     finishes: dict[str, Settings]
-    marks: list[Settings]
     hidden_mark: str | None
     offsets: dict[str, list[float]] = field(default_factory=dict)
 
@@ -80,7 +75,6 @@ class Recipe:
         if not path.is_file():
             raise FileNotFoundError(f"no bake recipe {path}")
         recipe, shared = read_json(path), read_json(folder / "defaults.json")
-        mark = shared.get("mark", {})
         density = recipe.get("density", TARGET_DENSITY)
         parts = [
             Part(
@@ -92,12 +86,10 @@ class Recipe:
             )
             for name, part in recipe.get("parts", {}).items()
         ]
-        hidden = recipe.get("hidden_mark", True)
         return cls(
             parts=parts,
             finishes=merge_finishes(shared.get("finishes", {}), recipe.get("finishes", {})),
-            marks=[mark | own for own in recipe.get("marks", [])],
-            hidden_mark=mark.get("text") if hidden is True else hidden or None,
+            hidden_mark=recipe.get("hidden_mark"),
             offsets=recipe.get("at", {}),
         )
 
