@@ -86,15 +86,26 @@ def open_model(
     for action in target.actions:
         action.use_fake_user = True
     sc = bpy.data.scenes[names[0]]
-    folder = os.path.dirname(blend_path)
-    for img in bpy.data.images:
-        if img.filepath and not os.path.exists(bpy.path.abspath(img.filepath)):
-            local = os.path.join(folder, os.path.basename(img.filepath))
-            if os.path.exists(local):
-                img.filepath = local
-                img.reload()
+    relink_images(os.path.dirname(blend_path))
     bpy.context.window.scene = sc
     return sc
+
+
+def relink_images(folder: str, moved_from: str | None = None) -> None:
+    """Points images at the same file name in `folder`: those loaded from under `moved_from`,
+    or else those whose file is gone, such as paths saved from another checkout."""
+    moved_from = moved_from and os.path.normcase(os.path.abspath(moved_from))
+    for img in bpy.data.images:
+        path = bpy.path.abspath(img.filepath)
+        if not path:
+            continue
+        beside = os.path.join(folder, os.path.basename(path))
+        if moved_from:
+            if os.path.normcase(os.path.abspath(path)).startswith(moved_from):
+                img.filepath = beside
+        elif not os.path.exists(path) and os.path.exists(beside):
+            img.filepath = beside
+            img.reload()
 
 
 def import_dmx(

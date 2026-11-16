@@ -9,7 +9,6 @@ from dataclasses import dataclass
 class CompiledTexture:
     width: int
     height: int
-    image_format: int
     mip_levels: int
 
 
@@ -26,5 +25,5 @@ def read(path: str | os.PathLike[str]) -> CompiledTexture:
             body = entry + 4 + offset
             # Version and flags, then four reflectivity floats, then the size.
             width, height = struct.unpack_from("<HH", data, body + 20)
-            return CompiledTexture(width, height, data[body + 26], data[body + 27])
+            return CompiledTexture(width, height, data[body + 27])
     raise ValueError(f"{path} has no DATA block")

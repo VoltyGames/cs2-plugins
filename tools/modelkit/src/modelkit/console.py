@@ -40,9 +40,5 @@ def done(text: str) -> None:
     _out.print(text, style="bold green", markup=False)
 
 
-def warn(text: str) -> None:
-    _err.print(f"warning: {text}", style="yellow", markup=False)
-
-
 def error(text: str) -> None:
     _err.print(f"error: {text}", style="bold red", markup=False)

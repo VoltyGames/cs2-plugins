@@ -1,9 +1,7 @@
-"""Triangles each part can lose without looking different. With `apply`, trims them, renders
-the part from all round before and after, keeps the trim only where no view changed, and saves
-the .blend."""
+"""Triangles each part can lose without looking different. With `apply`, trims them, keeping a
+part's trim only if renders from all round match before and after, and saves the .blend."""
 
 import math
-import os
 from collections.abc import Collection
 from typing import Any
 
@@ -12,10 +10,9 @@ import bpy
 import numpy as np
 from numpy.typing import NDArray
 
-from modelkit.blender import stage, trim
-from modelkit.blender.stage import SKIPPED
+from modelkit.blender import export, trim
+from modelkit.blender.stage import Stage, find_render_meshes
 
-OPERATIONS = ("degenerate", "coplanar", "hidden")
 # Eight views round at eye level, one from above and one looking down steeply.
 VIEWS = [
     (math.cos(a) * math.cos(e), math.sin(a) * math.cos(e), math.sin(e))
@@ -23,90 +20,69 @@ VIEWS = [
     for a in (math.radians(i * 360 / count + 22.5) for i in range(count))
 ]
 VIEW_SIZE = (800, 500)
-# A view changed when more than this share of its pixels moved by more than CHANGED.
+# A view changed when more than ALLOWED_SHARE of its pixels moved by more than CHANGED.
 CHANGED = 10 / 255
 ALLOWED_SHARE = 0.0005
 
 
-def parts() -> list[tuple[str, bpy.types.Object]]:
-    """(scene, object) for each render mesh, each mesh once."""
-    seen, found = set(), []
-    for sc in bpy.data.scenes:
-        for ob in sc.objects:
-            if ob.type == "MESH" and not SKIPPED.search(ob.name) and ob.data.name not in seen:
-                seen.add(ob.data.name)
-                found.append((sc.name, ob))
-    return found
-
-
-def triangle_count(mesh: bpy.types.Mesh) -> int:
+def count_triangles(mesh: bpy.types.Mesh) -> int:
     return sum(len(p.vertices) - 2 for p in mesh.polygons)
 
 
 def render_views(scene_name: str, folder: str, tag: str) -> list[str]:
-    scene = stage.gather([scene_name])
-    stage.light(scene, VIEW_SIZE)
-    paths = []
-    for index, direction in enumerate(VIEWS):
-        stage.aim(scene, direction)
-        paths.append(stage.render(scene, os.path.join(folder, f"{scene_name}_{index}_{tag}.png")))
-    stage.remove(scene)
-    return paths
+    with Stage([scene_name], VIEW_SIZE) as stage:
+        return stage.render_around(VIEWS, folder, f"{scene_name}_{tag}")
 
 
-def pixels(path: str) -> NDArray[np.float32]:
+def read_pixels(path: str) -> NDArray[np.float32]:
     image = bpy.data.images.load(path)
-    values = np.array(image.pixels[:], dtype=np.float32).reshape(-1, 4)[:, :3]
+    values = np.empty(len(image.pixels), dtype=np.float32)
+    image.pixels.foreach_get(values)
     bpy.data.images.remove(image)
-    return values
+    return values.reshape(-1, 4)[:, :3]
 
 
-def changed_share(before: str, after: str) -> float:
+def measure_change(before: str, after: str) -> float:
     """The share of pixels that differ by more than CHANGED in any channel."""
-    return float((np.abs(pixels(before) - pixels(after)).max(axis=1) > CHANGED).mean())
+    difference = np.abs(read_pixels(before) - read_pixels(after)).max(axis=1)
+    return float((difference > CHANGED).mean())
 
 
-def restore(mesh: bpy.types.Mesh, backup: bpy.types.Mesh) -> None:
+def copy_geometry(source: bpy.types.Mesh, target: bpy.types.Mesh) -> None:
+    """Replaces `target`'s geometry in place, so every object sharing it follows."""
     bm = bmesh.new()
-    bm.from_mesh(backup)
-    bm.to_mesh(mesh)
+    bm.from_mesh(source)
+    bm.to_mesh(target)
     bm.free()
-    mesh.update()
-
-
-def save(path: str) -> None:
-    """Writes every scene and action back, as export.save_blend does, without the UI."""
-    blocks = set(bpy.data.scenes) | set(bpy.data.actions)
-    bpy.data.libraries.write(path, blocks, path_remap="RELATIVE_ALL", fake_user=True, compress=True)
+    target.update()
 
 
 def main(
-    apply: bool = False, operations: Collection[str] = OPERATIONS, views_dir: str | None = None
+    operations: Collection[str], apply: bool = False, views_dir: str | None = None
 ) -> list[dict[str, Any]]:
     rows = []
-    for scene_name, ob in parts():
-        before = triangle_count(ob.data)
-        row = {"scene": scene_name, "object": ob.name, "triangles": before}
-        if not apply:
-            trial = ob.data.copy()
-            row["removed"] = trim.trim(trial, operations)
-            bpy.data.meshes.remove(trial)
-            rows.append(row)
-            continue
-        backup = ob.data.copy()
-        views_before = render_views(scene_name, views_dir, "before")
-        row["removed"] = trim.trim(ob.data, operations)
-        if triangle_count(ob.data) == before:
-            row["applied"] = False
-        else:
-            views_after = render_views(scene_name, views_dir, "after")
-            worst = max(changed_share(a, b) for a, b in zip(views_before, views_after))
-            row["changed"] = worst
-            row["applied"] = worst <= ALLOWED_SHARE
-            if not row["applied"]:
-                restore(ob.data, backup)
-        bpy.data.meshes.remove(backup)
+    for scene, ob in find_render_meshes():
+        trial = ob.data.copy()
+        row = {
+            "scene": scene.name,
+            "object": ob.name,
+            "triangles": count_triangles(ob.data),
+            "removed": trim.trim(trial, operations),
+        }
         rows.append(row)
+        if apply:
+            row["applied"] = False
+        if apply and count_triangles(trial) < row["triangles"]:
+            backup = ob.data.copy()
+            before = render_views(scene.name, views_dir, "before")
+            copy_geometry(trial, ob.data)
+            after = render_views(scene.name, views_dir, "after")
+            row["changed"] = max(measure_change(a, b) for a, b in zip(before, after, strict=True))
+            row["applied"] = row["changed"] <= ALLOWED_SHARE
+            if not row["applied"]:
+                copy_geometry(backup, ob.data)
+            bpy.data.meshes.remove(backup)
+        bpy.data.meshes.remove(trial)
     if apply and any(row["applied"] for row in rows):
-        save(bpy.data.filepath)
+        export.save_everything(bpy.data.filepath)
     return rows

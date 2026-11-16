@@ -73,7 +73,6 @@ def summarize(points: Floats, uvs: Floats) -> dict[str, float | int | bool]:
     atlas = bool(lo.min() > -0.01 and hi.max() < 1.01)
     return {
         "triangles": len(points),
-        "area": total,
         "density": float(np.sqrt(area_uv.sum() / total)) if total else 0.0,
         "p10": weighted_percentile(per_face, area[solid], 0.1) if solid.any() else 0.0,
         "p90": weighted_percentile(per_face, area[solid], 0.9) if solid.any() else 0.0,

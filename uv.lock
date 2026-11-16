@@ -381,6 +381,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "rich" },
     { name = "typer" },
+    { name = "vpk" },
 ]
 
 [package.dev-dependencies]
@@ -395,6 +396,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "rich", specifier = ">=15.0.0" },
     { name = "typer", specifier = ">=0.29.1" },
+    { name = "vpk", specifier = ">=1.4.0" },
 ]
 
 [package.metadata.requires-dev]

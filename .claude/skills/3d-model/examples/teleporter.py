@@ -8,7 +8,7 @@ Run it inside Blender with the repo root as REPO:
     ns = {"REPO": r"<repo>"}
     exec(open(r"<repo>/.claude/skills/3d-model/examples/teleporter.py").read(), ns)
 
-After `export.write_dmx`, `ns["write_modeldoc"]()` writes the .vmat files and the .vmdl.
+After `export.write_dmx`, `ns["write_model_files"]()` writes the .vmat files and the .vmdl.
 """
 
 import math
@@ -32,7 +32,7 @@ from modelkit.blender import (  # noqa: E402
     shapes,
     surfaces,
 )
-from modelkit.source2 import modeldoc  # noqa: E402
+from modelkit.source2 import vmat, vmdl  # noqa: E402
 
 FOLDER = "models/stronghold/teleporter/"
 DIR = os.path.join(REPO, "plugins", "stronghold", "content", FOLDER)  # noqa: F821
@@ -234,7 +234,7 @@ export.remember(
 preview.stage()
 
 
-def write_modeldoc():
+def write_model_files():
     """The .vmat files, the strip's team colours and the .vmdl with its red material group."""
     rough, mask = FOLDER + "teleporter_rough.png", "teleporter_glow_mask.png"
     surfaces.solid(os.path.join(DIR, "teleporter_rough.png"), (1, 1, 1))
@@ -242,24 +242,26 @@ def write_modeldoc():
     surfaces.solid(os.path.join(DIR, "teleporter_strip_color.png"), (0.08, 0.45, 1.0))
     surfaces.solid(os.path.join(DIR, "teleporter_strip_red_color.png"), (1.0, 0.18, 0.06))
 
-    def vmat(name, color, normal=None, **look):
+    def write_material(name, color, normal=None, **look):
         path = os.path.join(DIR, f"teleporter_{name}.vmat")
-        return modeldoc.write_vmat(path, FOLDER, color, rough, normal, **look)
+        return vmat.write_vmat(path, FOLDER, color, rough, normal, **look)
 
     body_normal = "teleporter_body_normal.png"
-    vmat("body", "teleporter_body_color.png", body_normal, metalness=0.45, roughness=0.55)
-    vmat("rim", "teleporter_rim_color.png", body_normal, metalness=0.5, roughness=0.5)
-    vmat("well", "teleporter_well_color.png", body_normal, metalness=0.4, roughness=0.7)
+    write_material("body", "teleporter_body_color.png", body_normal, metalness=0.45, roughness=0.55)
+    write_material("rim", "teleporter_rim_color.png", body_normal, metalness=0.5, roughness=0.5)
+    write_material("well", "teleporter_well_color.png", body_normal, metalness=0.4, roughness=0.7)
     steel_normal = "teleporter_steel_normal.png"
-    vmat("steel", "teleporter_steel_color.png", steel_normal, metalness=0.85, roughness=0.4)
+    write_material(
+        "steel", "teleporter_steel_color.png", steel_normal, metalness=0.85, roughness=0.4
+    )
     for name in ("strip", "strip_red", "core"):
         color = f"teleporter_{name}_color.png"
-        vmat(name, color, metalness=0.0, roughness=0.4, glow_mask=mask, glow=1.0)
+        write_material(name, color, metalness=0.0, roughness=0.4, glow_mask=mask, glow=1.0)
 
     def at(name):
         return FOLDER + name
 
-    modeldoc.write_vmdl(
+    vmdl.write_vmdl(
         os.path.join(DIR, "teleporter.vmdl"),
         meshes=[("teleporter", at("teleporter_teleporter.dmx"))],
         hulls=[at("teleporter_hull.dmx")],

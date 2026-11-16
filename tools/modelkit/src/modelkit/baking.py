@@ -1,268 +1,195 @@
-"""Retexturing a model from its bake recipe, plugins/<plugin>/bake/<model>.json. Recipes stay
-out of content/, whose unreferenced files `voltmod content compile --prune` deletes.
+"""Retexturing a model from its bake recipe (see modelkit.recipe).
 
-`preview` bakes into build/bake/<plugin>/<model>/ and renders the result; nothing in the model
-folder changes. `write` then ships that bake: the PNGs and .vmat into the model folder, the
-.blend saved and the DMX re-exported.
-
-A recipe:
-
-    {
-      "density": 12,
-      "parts": {"<object>": {"material": "<new>.vmat", "surfaces": {"<old>.vmat": "<finish>"}}},
-      "finishes": {"<finish>": {"base": "polyhaven:<id>", "under": "polyhaven:<id>", "tile": 96,
-                                "tint": [r, g, b], "metallic": 0.0, "wear": 0.5, "grime": 0.5,
-                                "dust": 0.4}},
-      "marks": [{"text": "...", "part": "<object>", "at": [x, y, z], "height": 1.2,
-                 "style": "stamp"}],
-      "hidden_mark": "...",
-      "at": {"<scene>": [x, y, z]}
-    }
-
-`"blend"` (default 0.25) softens the seams of a finish's box projection; raise it for small,
-rounded parts, where a face looking half up smears the top-down projection down its side.
-
-`"artwork": true` in a finish keeps the surface's own colour texture, such as hazard stripes,
-under the library material's roughness, normal and wear.
-
-Each part bakes at the smallest of 512, 1024 and 2048 that gives it `density` pixels per game
-unit (DENSITY by default); a part or the recipe may set `density`, or a fixed `size`, instead.
-
-`at` in a mark is a point in Blender units on the face to stamp; its `surface`, one of the part's
-old .vmat names, keeps it on that material's faces where another surface lies close by, and
-its `right`, a direction, turns the text, which otherwise runs level across the face.
-
-The top-level `at` places parts the plugin stacks in code, for the preview render.
-
-A model that keeps its own textures has a recipe of only `marks`, which `stamp_marks` presses
-into its colour texture without a bake.
+`preview` bakes into build/bake/<plugin>/<model>/ and renders the result, leaving the model
+folder alone; `write` then ships that bake into the model folder.
 """
 
-import json
 import shutil
-import subprocess
+from collections import defaultdict
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path, PurePosixPath
-from typing import Any
 
-from modelkit import finish, game, headless, library
-from modelkit.source2 import modeldoc
+from modelkit import game, headless
+from modelkit.git_files import export_folder
+from modelkit.marks import Mark
+from modelkit.models import ModelFolder
+from modelkit.recipe import SIZES, Recipe
+from modelkit.source2 import vmat
+from modelkit.texture_set import TextureSet, stamp_texture
 
-# Pixels per game unit a part's atlas aims for when the recipe sets no size: sharp at the
-# distances structures are seen from. Props seen up close set a higher `density`.
-DENSITY = 12.0
-
-# The pixels kept free along the atlas's top edge for the hidden mark: the bake's 12-pixel
-# margin spills into it, and the mark needs 16 clear rows.
+# Pixels kept free along the atlas's top edge for the hidden mark: the bake's 12-pixel margin
+# spills into it, and the mark needs clear rows beyond that.
 HIDDEN_BAND = 40
 
 
 @dataclass(frozen=True)
 class Preview:
     renders: list[str]
-    density: dict[str, float]
-    """Each part's pixels per game unit at its atlas size."""
+    pixels_per_unit: dict[str, float]
     device: str
 
 
-def scratch_dir(plugin: str, model: str) -> Path:
-    return game.REPO / "build" / "bake" / plugin / model
+class ModelBake:
+    def __init__(self, plugin: str, model: str) -> None:
+        self.plugin = plugin
+        self.folder = ModelFolder(plugin, game.models_dir(plugin) / model)
+        self.scratch = game.REPO / "build" / "bake" / plugin / model
+        self.baked_blend = self.scratch / f"{model}.blend"
 
+    @cached_property
+    def recipe(self) -> Recipe:
+        return Recipe.load(self.plugin, self.folder.name)
 
-def read_recipe(plugin: str, model: str) -> dict[str, Any]:
-    path = game.plugin_dir(plugin) / "bake" / f"{model}.json"
-    if not path.is_file():
-        raise FileNotFoundError(f"no bake recipe {path}")
-    return json.loads(path.read_text(encoding="utf-8"))
+    def extract_source(self, revision: str) -> Path:
+        """The model's .blend as it was at `revision` of the plugin's repo, for re-baking a model
+        whose .blend already holds its baked material."""
+        folder = PurePosixPath("content", "models", self.plugin, self.folder.name)
+        into = self.scratch / "source"
+        export_folder(game.plugin_dir(self.plugin), folder, revision, into)
+        blend = into / self.folder.blend.name
+        if not blend.is_file():
+            raise FileNotFoundError(f"no {blend.name} in {folder} at {revision}")
+        return blend
 
+    def preview(self, source: str | None = None) -> Preview:
+        """Bakes the recipe; `source`, a revision of the plugin's repo, bakes from the model's
+        .blend as it was then."""
+        recipe = self.recipe
+        if self.scratch.exists():
+            shutil.rmtree(self.scratch)
+        (self.scratch / "raw").mkdir(parents=True)
+        blend = self.extract_source(source) if source else self.folder.blend
+        largest = game.read_texture_cap() or SIZES[-1]
+        baked = headless.run_job(
+            "bake",
+            blend,
+            parts={
+                part.name: {
+                    "material": part.material,
+                    "surfaces": part.surfaces,
+                    "density": part.density,
+                    "size": part.size,
+                }
+                for part in recipe.parts
+            },
+            finishes=recipe.resolve_finishes(),
+            marks=recipe.marks,
+            folder=str(self.scratch / "raw"),
+            save_to=str(self.baked_blend),
+            sizes=[size for size in SIZES if size <= largest] or [largest],
+            reserve=HIDDEN_BAND if recipe.hidden_mark else 0,
+        )
+        textures, density = {}, {}
+        for part in recipe.parts:
+            result = baked["parts"][part.name]
+            texture_set = TextureSet(result["files"])
+            texture_set.stamp(Mark.from_frame(frame) for frame in result["frames"])
+            if recipe.hidden_mark:
+                texture_set.hide(recipe.hidden_mark)
+            written = texture_set.save(self.scratch / "final", part.stem)
+            textures[part.material] = {channel: str(path) for channel, path in written.items()}
+            density[part.name] = result["pixels_per_unit"]
+        shown = headless.run_job(
+            "preview",
+            self.baked_blend,
+            textures=textures,
+            folder=str(self.scratch),
+            at=recipe.offsets,
+        )
+        return Preview(shown["renders"], density, baked["device"])
 
-def resolve_finishes(finishes: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    """The finishes with each material name replaced by its downloaded maps."""
-    resolved = {}
-    for name, settings in finishes.items():
-        maps = {
-            key: library.find_maps(settings[key]) for key in ("base", "under") if key in settings
+    def keep_shared(self, target: Path, kept_materials: set[str]) -> None:
+        """Before `target` is overwritten, moves it to a _flat_ name for the kept materials still
+        using it, such as a flat roughness map shared by glass and glow."""
+        reference = f"{self.folder.addon_path}{target.name}"
+        users = [
+            path
+            for path in self.folder.path.glob("*.vmat")
+            if path.name in kept_materials and reference in path.read_text()
+        ]
+        if not users or not target.exists():
+            return
+        stem, _, suffix = target.stem.rpartition("_")
+        kept = target.with_name(f"{stem}_flat_{suffix}.png")
+        if not kept.exists():
+            shutil.copyfile(target, kept)
+        for path in users:
+            text = path.read_text().replace(reference, f"{self.folder.addon_path}{kept.name}")
+            path.write_text(text, newline="\n")
+
+    def remove_replaced(self, replaced: set[str], dropped: set[str]) -> list[str]:
+        """Deletes the replaced .vmat files, and their textures and `dropped` ones that no
+        remaining .vmat names."""
+        folder = self.folder.path
+        names = set(dropped)
+        deleted = sorted(name for name in replaced if (folder / name).exists())
+        for name in deleted:
+            names |= self.folder.read_texture_names(name)
+            (folder / name).unlink()
+        still_used = {
+            n for path in folder.glob("*.vmat") for n in self.folder.read_texture_names(path.name)
         }
-        resolved[name] = settings | maps
-    return resolved
+        removed = [name for name in sorted(names - still_used) if (folder / name).exists()]
+        for name in removed:
+            (folder / name).unlink()
+        return [str(folder / name) for name in deleted + removed]
 
-
-def stem_of(material: str) -> str:
-    return PurePosixPath(material).stem
-
-
-def extract_source(plugin: str, model: str, revision: str, into: Path) -> Path:
-    """The model folder as it was at `revision` of the plugin's repo, Git LFS files resolved,
-    copied into `into`; returns its .blend. For re-baking a model whose .blend already holds
-    the baked material instead of the surfaces its recipe names."""
-    repo = game.plugin_dir(plugin)
-    folder = PurePosixPath("content", "models", plugin, model)
-    listed = subprocess.run(
-        ["git", "-C", str(repo), "ls-tree", "-r", "--name-only", revision, str(folder)],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.split()
-    into.mkdir(parents=True)
-    for name in listed:
-        stored = subprocess.run(
-            ["git", "-C", str(repo), "show", f"{revision}:{name}"], check=True, capture_output=True
-        ).stdout
-        content = subprocess.run(
-            ["git", "-C", str(repo), "lfs", "smudge"],
-            input=stored,
-            check=True,
-            capture_output=True,
-        ).stdout
-        (into / PurePosixPath(name).name).write_bytes(content)
-    blend = into / f"{model}.blend"
-    if not blend.is_file():
-        raise FileNotFoundError(f"no {model}.blend in {folder} at {revision}")
-    return blend
-
-
-def preview(plugin: str, model: str, source: str | None = None) -> Preview:
-    """Bakes the recipe; `source`, a revision of the plugin's repo, bakes from the model's
-    .blend as it was then."""
-    folder = game.models_dir(plugin) / model
-    recipe = read_recipe(plugin, model)
-    scratch = scratch_dir(plugin, model)
-    if scratch.exists():
-        shutil.rmtree(scratch)
-    (scratch / "raw").mkdir(parents=True)
-    blend = folder / f"{model}.blend"
-    if source:
-        blend = extract_source(plugin, model, source, scratch / "source")
-    baked = headless.run_job(
-        "bake",
-        blend,
-        parts=recipe["parts"],
-        finishes=resolve_finishes(recipe["finishes"]),
-        marks=recipe.get("marks", []),
-        size=recipe.get("size"),
-        density=recipe.get("density", DENSITY),
-        largest=game.read_texture_cap() or 2048,
-        folder=str(scratch / "raw"),
-        save_to=str(scratch / f"{model}.blend"),
-        reserve=HIDDEN_BAND if recipe.get("hidden_mark") else 0,
-    )
-    textures, density, device = {}, {}, "CPU"
-    for object_name, result in baked.items():
-        material = recipe["parts"][object_name]["material"]
-        written = finish.finish(
-            result["files"],
-            scratch / "final",
-            stem_of(material),
-            result["frames"],
-            recipe.get("hidden_mark"),
+    def write(self) -> list[str]:
+        """Ships the last preview; returns the files written and removed."""
+        if not self.baked_blend.is_file():
+            raise FileNotFoundError(
+                f"no preview in {self.scratch}; run modelkit bake without --write first"
+            )
+        recipe, folder = self.recipe, self.folder.path
+        kept = {path.name for path in folder.glob("*.vmat")} - recipe.replaced - recipe.materials
+        # What a part's material named before it was baked over, such as an old AO map.
+        dropped = {
+            name
+            for material in recipe.materials
+            if (folder / material).exists()
+            for name in self.folder.read_texture_names(material)
+        }
+        textures, written = defaultdict(dict), []
+        for part in recipe.parts:
+            for channel, suffix in vmat.BAKED_SUFFIXES.items():
+                target = folder / f"{part.stem}_{suffix}.png"
+                self.keep_shared(target, kept)
+                shutil.copyfile(self.scratch / "final" / target.name, target)
+                textures[part.material][channel] = str(target)
+                written.append(str(target))
+            path = vmat.write_baked_vmat(folder / part.material, self.folder.addon_path, part.stem)
+            written.append(str(path))
+        shipped = headless.run_job(
+            "ship",
+            self.baked_blend,
+            user_settings=True,
+            textures=textures,
+            save=str(self.folder.blend),
+            export_dir=str(folder),
+            relink_from=str(self.scratch / "source"),
         )
-        textures[material] = {channel: str(path) for channel, path in written.items()}
-        density[object_name] = result["density"] * result["size"]
-        device = result["device"]
-    shown = headless.run_job(
-        "adopt",
-        scratch / f"{model}.blend",
-        textures=textures,
-        render_dir=str(scratch),
-        at=recipe.get("at"),
-    )
-    return Preview(shown["renders"], density, device)
+        # A part may keep its old material's name; that file is the new one now.
+        removed = self.remove_replaced(recipe.replaced - recipe.materials, dropped)
+        return written + [
+            shipped["saved"],
+            *shipped["exported"],
+            *(f"removed {p}" for p in removed),
+        ]
 
-
-def keep_shared(folder: Path, addon_folder: str, target: Path, kept_materials: set[str]) -> None:
-    """Before `target` is overwritten, moves it to a _flat_ name for the kept materials still
-    using it, such as a flat roughness map shared by glass and glow."""
-    reference = f"{addon_folder}{target.name}"
-    users = [
-        vmat
-        for vmat in folder.glob("*.vmat")
-        if vmat.name in kept_materials and reference in vmat.read_text()
-    ]
-    if not users or not target.exists():
-        return
-    stem, _, suffix = target.stem.rpartition("_")
-    kept = target.with_name(f"{stem}_flat_{suffix}.png")
-    if not kept.exists():
-        shutil.copyfile(target, kept)
-    for vmat in users:
-        text = vmat.read_text().replace(reference, f"{addon_folder}{kept.name}")
-        vmat.write_text(text, newline="\n")
-
-
-def texture_names(vmat: Path) -> set[str]:
-    return {Path(value).name for value in modeldoc.read_vmat(vmat).values()}
-
-
-def remove_replaced(
-    folder: Path, addon_folder: str, replaced: set[str], dropped: set[str] | None = None
-) -> list[str]:
-    """Deletes the replaced .vmat files, and their textures and `dropped` ones that no remaining
-    .vmat names."""
-    names = set(dropped or ())
-    deleted = sorted(name for name in replaced if (folder / name).exists())
-    for name in deleted:
-        names |= texture_names(folder / name)
-        (folder / name).unlink()
-    still_used = {name for vmat in folder.glob("*.vmat") for name in texture_names(vmat)}
-    removed = [name for name in sorted(names - still_used) if (folder / name).exists()]
-    for name in removed:
-        (folder / name).unlink()
-    return [str(folder / name) for name in deleted + removed]
-
-
-def write(plugin: str, model: str) -> list[str]:
-    """Ships the last preview; returns the files written."""
-    folder = game.models_dir(plugin) / model
-    recipe = read_recipe(plugin, model)
-    scratch = scratch_dir(plugin, model)
-    if not (scratch / f"{model}.blend").is_file():
-        raise FileNotFoundError(f"no preview in {scratch}; run modelkit bake without --write first")
-    addon_folder = f"models/{plugin}/{model}/"
-    replaced = {name for part in recipe["parts"].values() for name in part["surfaces"]}
-    new = {part["material"] for part in recipe["parts"].values()}
-    kept = {v.name for v in folder.glob("*.vmat")} - replaced - new
-    # What a part's material named before it was baked over, such as an old AO map.
-    dropped = {n for m in new if (folder / m).exists() for n in texture_names(folder / m)}
-    textures, written = {}, []
-    for part in recipe["parts"].values():
-        stem = stem_of(part["material"])
-        maps = {}
-        for channel, (suffix, _) in finish.SHIPPED.items():
-            target = folder / f"{stem}_{suffix}.png"
-            keep_shared(folder, addon_folder, target, kept)
-            shutil.copyfile(scratch / "final" / target.name, target)
-            maps[channel] = str(target)
-            written.append(str(target))
-        textures[part["material"]] = maps
-        written.append(
-            modeldoc.write_baked_vmat(str(folder / part["material"]), addon_folder, stem)
-        )
-    adopted = headless.run_job(
-        "adopt",
-        scratch / f"{model}.blend",
-        user_settings=True,
-        textures=textures,
-        save=str(folder / f"{model}.blend"),
-        export_dir=str(folder),
-        relink_from=str(scratch / "source"),
-    )
-    # A part may keep its old material's name; that file is the new one now.
-    removed = [
-        f"removed {path}" for path in remove_replaced(folder, addon_folder, replaced - new, dropped)
-    ]
-    return written + [adopted["saved"], *adopted["exported"], *removed]
-
-
-def stamp_marks(plugin: str, model: str) -> list[str]:
-    """Stamps the recipe's marks onto the model's own colour textures, with no bake: for models
-    whose hand-made textures stay. Run it once; a second run presses the marks in again."""
-    folder = game.models_dir(plugin) / model
-    recipe = read_recipe(plugin, model)
-    placed = headless.run_job("mark", folder / f"{model}.blend", marks=recipe.get("marks", []))
-    stamped = []
-    for frame in placed:
-        path = Path(frame["image"])
-        rough_path = path.with_name(path.name.replace("_color", "_rough"))
-        written = finish.stamp_image(path, rough_path if rough_path.is_file() else None, frame)
-        stamped += [str(p) for p in written]
-    return stamped
+    def stamp_marks(self) -> list[str]:
+        """Stamps the recipe's marks onto the model's own colour textures, with no bake. A
+        second run presses the marks in again."""
+        placed = headless.run_job("mark", self.folder.blend, marks=self.recipe.marks)
+        rough_textures = {
+            m.name: m.find_detailed_texture("TextureRoughness") for m in self.folder.materials
+        }
+        by_image = defaultdict(list)
+        for frame in placed:
+            by_image[frame["image"], rough_textures.get(frame["material"])].append(
+                Mark.from_frame(frame)
+            )
+        stamped = []
+        for (image, rough), marks in by_image.items():
+            stamped += [str(path) for path in stamp_texture(Path(image), rough, marks)]
+        return stamped

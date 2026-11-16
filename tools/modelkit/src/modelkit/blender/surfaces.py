@@ -41,10 +41,9 @@ def save_pixels(path: str, px: Pixels, data: bool = False) -> bpy.types.Image:
 
 
 def image(path: str, data: bool = False) -> bpy.types.Image:
-    """Loads an existing PNG for a preview material."""
+    """Loads an existing PNG, as colour or, with `data`, as raw values such as a normal map."""
     img = bpy.data.images.load(path, check_existing=True)
-    if data:
-        img.colorspace_settings.name = "Non-Color"
+    img.colorspace_settings.name = "Non-Color" if data else "sRGB"
     return img
 
 

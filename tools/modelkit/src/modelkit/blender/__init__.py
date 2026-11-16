@@ -5,7 +5,7 @@
     import modelkit.blender
     modelkit.blender.reload()
     from modelkit.blender import session, surfaces, shapes, objects, rig, preview, export
-    from modelkit.source2 import modeldoc
+    from modelkit.source2 import vmat, vmdl, vpcf
 
 One Blender unit is one Source unit; +X is the model's forward, +Z is up.
 """
@@ -16,7 +16,9 @@ import sys
 # Dependencies first, so a reload picks up edits in the modules the others import.
 MODULES = (
     "modelkit.source2.kv3",
-    "modelkit.source2.modeldoc",
+    "modelkit.source2.vmat",
+    "modelkit.source2.vmdl",
+    "modelkit.source2.vpcf",
     "modelkit.blender.measure",
     "modelkit.blender.session",
     "modelkit.blender.surfaces",

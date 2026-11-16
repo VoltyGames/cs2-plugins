@@ -5,8 +5,9 @@ import pytest
 from PIL import Image
 
 from modelkit import game
-from modelkit.audit import find_models, textures
-from modelkit.source2 import modeldoc
+from modelkit.audit import textures
+from modelkit.models import ModelFolder
+from modelkit.source2 import vmat, vmdl
 
 
 @pytest.fixture
@@ -22,12 +23,12 @@ def crate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def test_flat_material_is_flagged_and_team_colour_skipped(crate: Path) -> None:
     for name in ("crate", "team"):
-        modeldoc.write_vmat(crate / f"{name}.vmat", "models/demo/crate/", "crate_color.png", "")
-    modeldoc.write_vmdl(
+        vmat.write_vmat(crate / f"{name}.vmat", "models/demo/crate/", "crate_color.png", "")
+    vmdl.write_vmdl(
         crate / "crate.vmdl",
         [("crate", "crate.dmx")],
         material_groups={"blue": {"models/demo/crate/team.vmat": "models/demo/crate/team.vmat"}},
     )
-    [report] = textures.audit("demo", find_models("demo"))
+    [report] = textures.audit(ModelFolder.find_all("demo"))
     assert report.material == "crate.vmat"
     assert report.problems == ["flat colour", "one roughness", "no normal map", "no AO"]

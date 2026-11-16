@@ -45,13 +45,18 @@ def run(plugin: str | None) -> bool:
         console.check(False, "CS2 stopped", f"cs2.exe running ({', '.join(pids)}); installs fail")
 
     if plugin:
-        folder = game.plugin_dir(plugin)
-        source = folder / "content"
-        content = game.client() / "content" / "csgo_addons" / plugin
-        ok &= console.check(source.is_dir(), "addon source", str(source.relative_to(game.REPO)))
-        kind = "junction" if content.is_junction() else "copy; content compile mirrors into it"
-        ok &= console.check(content.is_dir(), "addon content folder", f"{content} ({kind})")
-        missing = find_missing_lfs_rules(folder)
-        detail = f"add content/**/*.{{{','.join(missing)}}}" if missing else ""
-        console.check(not missing, "LFS rules", detail)
+        ok &= check_addon(plugin)
+    return ok
+
+
+def check_addon(plugin: str) -> bool:
+    folder = game.plugin_dir(plugin)
+    source = folder / "content"
+    content = game.client() / "content" / "csgo_addons" / plugin
+    ok = console.check(source.is_dir(), "addon source", str(source.relative_to(game.REPO)))
+    kind = "junction" if content.is_junction() else "copy; content compile mirrors into it"
+    ok &= console.check(content.is_dir(), "addon content folder", f"{content} ({kind})")
+    missing = find_missing_lfs_rules(folder)
+    detail = f"add content/**/*.{{{','.join(missing)}}}" if missing else ""
+    console.check(not missing, "LFS rules", detail)
     return ok

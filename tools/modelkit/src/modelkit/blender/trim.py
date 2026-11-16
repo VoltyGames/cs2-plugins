@@ -22,11 +22,11 @@ EPSILON = 1e-3
 type WeightsKey = tuple[tuple[int, float], ...]
 
 
-def triangle_count(bm: bmesh.types.BMesh) -> int:
+def count_triangles(bm: bmesh.types.BMesh) -> int:
     return sum(len(f.verts) - 2 for f in bm.faces)
 
 
-def directions(count: int = DIRECTIONS) -> list[Vector]:
+def spread_directions(count: int = DIRECTIONS) -> list[Vector]:
     """Evenly spread unit vectors over the sphere (a Fibonacci lattice)."""
     golden = math.pi * (3 - math.sqrt(5))
     out = []
@@ -37,30 +37,28 @@ def directions(count: int = DIRECTIONS) -> list[Vector]:
     return out
 
 
-def weights_key(bm: bmesh.types.BMesh, vert: bmesh.types.BMVert) -> WeightsKey:
+def read_weights(bm: bmesh.types.BMesh) -> dict[bmesh.types.BMVert, WeightsKey]:
+    """Each vertex's bone weights, rounded, as a comparable key."""
     layer = bm.verts.layers.deform.active
     if layer is None:
-        return ()
-    return tuple(sorted((g, round(w, 3)) for g, w in vert[layer].items() if w > 0))
-
-
-def rigid_key(bm: bmesh.types.BMesh, face: bmesh.types.BMFace) -> WeightsKey | None:
-    """What the face moves with: its vertices' shared bone weights, or None when they differ,
-    as on a bending part."""
-    keys = {weights_key(bm, v) for v in face.verts}
-    return keys.pop() if len(keys) == 1 else None
+        return dict.fromkeys(bm.verts, ())
+    return {
+        v: tuple(sorted((g, round(w, 3)) for g, w in v[layer].items() if w > 0)) for v in bm.verts
+    }
 
 
 def find_hidden(bm: bmesh.types.BMesh) -> list[bmesh.types.BMFace]:
     """Faces no camera outside the mesh can see the front of."""
     bm.faces.ensure_lookup_table()
+    weights = read_weights(bm)
     groups = {}
     for face in bm.faces:
-        key = rigid_key(bm, face)
-        if key is not None:
-            groups.setdefault(key, []).append(face)
+        # Faces whose vertices follow different bones bend, so they hide nothing for sure.
+        keys = {weights[v] for v in face.verts}
+        if len(keys) == 1:
+            groups.setdefault(keys.pop(), []).append(face)
     hidden = []
-    sphere = directions()
+    sphere = spread_directions()
     for faces in groups.values():
         index_of = {face.index: i for i, face in enumerate(faces)}
         verts = sorted({v for f in faces for v in f.verts}, key=lambda v: v.index)
@@ -76,25 +74,20 @@ def find_hidden(bm: bmesh.types.BMesh) -> list[bmesh.types.BMFace]:
                 continue
             centre = face.calc_center_median()
             points = [centre.lerp(v.co, t) for v in face.verts for t in SAMPLES if t] + [centre]
+            ahead = [d for d in sphere if d.dot(face.normal) > 0.05]
             if not any(
-                seen(tree, index_of[face.index], p, face.normal, sphere, reach) for p in points
+                is_seen(tree, index_of[face.index], p, face.normal, ahead, reach) for p in points
             ):
                 hidden.append(face)
     return hidden
 
 
-def seen(
-    tree: BVHTree,
-    target: int,
-    point: Vector,
-    normal: Vector,
-    sphere: list[Vector],
-    reach: float,
+def is_seen(
+    tree: BVHTree, target: int, point: Vector, normal: Vector, ahead: list[Vector], reach: float
 ) -> bool:
+    """Whether a ray from any of the `ahead` directions reaches `point` on face `target`."""
     lifted = point + normal * EPSILON
-    for d in sphere:
-        if d.dot(normal) <= 0.05:
-            continue
+    for d in ahead:
         _, _, index, distance = tree.ray_cast(lifted + d * reach, -d, reach * 2)
         if index is None or index == target or distance >= reach - EPSILON * 10:
             return True
@@ -104,10 +97,11 @@ def seen(
 def mark_weight_borders(bm: bmesh.types.BMesh) -> list[bmesh.types.BMEdge]:
     """Seams on edges whose ends follow different bones, so a dissolve keeps them; returns the
     edges marked, to clear after."""
+    weights = read_weights(bm)
     marked = []
     for edge in bm.edges:
         a, b = edge.verts
-        if not edge.seam and weights_key(bm, a) != weights_key(bm, b):
+        if not edge.seam and weights[a] != weights[b]:
             edge.seam = True
             marked.append(edge)
     return marked
@@ -134,19 +128,19 @@ def trim(mesh: bpy.types.Mesh, operations: Collection[str]) -> dict[str, int]:
     bm.from_mesh(mesh)
     removed = {}
     if "degenerate" in operations:
-        before = triangle_count(bm)
+        before = count_triangles(bm)
         bmesh.ops.dissolve_degenerate(bm, dist=1e-4, edges=list(bm.edges))
-        removed["degenerate"] = before - triangle_count(bm)
+        removed["degenerate"] = before - count_triangles(bm)
     if "hidden" in operations:
-        before = triangle_count(bm)
+        before = count_triangles(bm)
         bmesh.ops.delete(bm, geom=find_hidden(bm), context="FACES_ONLY")
         loose = [v for v in bm.verts if not v.link_faces]
         bmesh.ops.delete(bm, geom=loose, context="VERTS")
-        removed["hidden"] = before - triangle_count(bm)
+        removed["hidden"] = before - count_triangles(bm)
     if "coplanar" in operations and not mesh.has_custom_normals:
-        before = triangle_count(bm)
+        before = count_triangles(bm)
         merge_coplanar(bm)
-        removed["coplanar"] = before - triangle_count(bm)
+        removed["coplanar"] = before - count_triangles(bm)
     bm.to_mesh(mesh)
     bm.free()
     mesh.update()

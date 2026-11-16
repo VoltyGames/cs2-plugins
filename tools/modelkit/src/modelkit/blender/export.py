@@ -112,3 +112,10 @@ def save_blend(scenes: str | Iterable[str], path: str) -> str:
             blocks.add(bpy.data.actions[action])
     bpy.data.libraries.write(path, blocks, path_remap="RELATIVE_ALL", fake_user=True, compress=True)
     return path
+
+
+def save_everything(path: str, remap: str = "RELATIVE_ALL") -> str:
+    """Writes every scene and action to `path`, for headless jobs that own the whole file."""
+    blocks = set(bpy.data.scenes) | set(bpy.data.actions)
+    bpy.data.libraries.write(path, blocks, path_remap=remap, fake_user=True, compress=True)
+    return path

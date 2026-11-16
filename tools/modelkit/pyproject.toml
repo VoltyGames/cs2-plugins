@@ -10,10 +10,11 @@ dependencies = [
     "python-dotenv>=1.2.4",
     "rich>=15.0.0",
     "typer>=0.29.1",
+    "vpk>=1.4.0",
 ]
 
 [project.scripts]
-modelkit = "modelkit.cli:app"
+modelkit = "modelkit.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=9.2.0"]

@@ -8,6 +8,7 @@ import io
 import json
 import urllib.request
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from modelkit import game
@@ -40,10 +41,14 @@ def download(url: str) -> bytes:
 
 def fetch_polyhaven(asset: str, folder: Path) -> None:
     files = json.loads(download(f"https://api.polyhaven.com/files/{asset}"))
-    for name, key in POLYHAVEN.items():
-        if key in files:
-            url = files[key][RESOLUTION]["png"]["url"]
-            (folder / f"{name}.png").write_bytes(download(url))
+    urls = {
+        name: files[key][RESOLUTION]["png"]["url"]
+        for name, key in POLYHAVEN.items()
+        if key in files
+    }
+    with ThreadPoolExecutor(len(urls) or 1) as pool:
+        for name, data in zip(urls, pool.map(download, urls.values()), strict=True):
+            (folder / f"{name}.png").write_bytes(data)
 
 
 def fetch_ambientcg(asset: str, folder: Path) -> None:

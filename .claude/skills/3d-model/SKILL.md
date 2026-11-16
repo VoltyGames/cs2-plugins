@@ -36,7 +36,7 @@ user approves.
 | `blender.rig` | Skeleton and actions |
 | `blender.preview` | Renders and the user's viewport |
 | `blender.export` | DMX export and the `.blend` |
-| `source2.modeldoc` | `.vmat`, `.vmdl` and `.vpcf` writers and readers; also runs without Blender |
+| `source2.vmat`, `source2.vmdl`, `source2.vpcf` | Material, model and particle writers and readers; also run without Blender |
 
 `modelkit.blender` and `modelkit.source2` run on Blender's Python 3.13: no newer syntax and no
 packages beyond numpy there. The CLI runs on the repository's Python.
@@ -60,7 +60,7 @@ import modelkit.blender
 
 modelkit.blender.reload()
 from modelkit.blender import session, surfaces, shapes, objects, rig, preview, export
-from modelkit.source2 import modeldoc
+from modelkit.source2 import vmat, vmdl, vpcf
 
 result = session.status()
 ```
@@ -106,16 +106,17 @@ Prefer a baked set over tiled textures: `uv run modelkit bake <plugin> <model>` 
 named materials into one atlas, bakes CC0 materials from Poly Haven or ambientCG with worn edges,
 grime, dust and streaks into colour, roughness, metalness and normal maps (no AO map: the game
 shadows the model itself), and stamps the
-maker's mark. Its recipe is `plugins/<plugin>/bake/<model>.json`; the format is in
-`modelkit/baking.py`, and `plugins/stronghold/bake/wall.json` is a worked one.
+maker's mark. Its recipe is `plugins/<plugin>/bake/<model>.json`, over the shared finishes and
+mark in `bake/defaults.json`; the format is in `modelkit/recipe.py`, and
+`plugins/stronghold/bake/wall.json` is a worked one.
 
 - It previews first: renders in `build/bake/<plugin>/<model>/`, the model folder untouched. Show
   the user, tune the recipe, bake again.
 - `--write` ships the preview: textures and `.vmat` into the model folder, the `.blend` saved,
   the DMX re-exported, the replaced `.vmat` files and their unused textures deleted. Then compile.
-- Structures get solid olive drab with light wear (the `olive_drab` finish in any Stronghold
-  recipe): keep grime, dust and streaks near 0.1 and `normal_strength` near 0.5, since heavier
-  weathering reads as noise in game. Recipe colours are linear, as Blender takes them.
+- Structures get solid olive drab with light wear (the shared `olive_drab` finish; tweak it per
+  recipe with `{"extends": "olive_drab", ...}`): keep grime, dust and streaks near 0.1 and
+  `normal_strength` at its 0.5 default, since heavier weathering reads as noise in game. Recipe colours are linear, as Blender takes them.
 - Leave `size` out: each part bakes at the smallest of 512, 1024 and 2048 reaching 12 pixels per
   game unit. Props seen up close set `"density": 16`.
 - To re-bake a model whose `.blend` already holds its baked material, pass
@@ -216,8 +217,8 @@ frames between keys without overshoot. `export.remember` saves the export settin
 export.write_dmx(scene, model_dir)  # meshes, hull, one DMX per action
 # every part's scene; Git LFS, not the compile
 export.save_blend(scenes, model_dir + "/<folder>.blend")
-modeldoc.write_vmat(...)  # only for new or changed materials
-modeldoc.write_vmdl(...)  # only when meshes, animations, groups or attachments change
+vmat.write_vmat(...)  # only for new or changed materials
+vmdl.write_vmdl(...)  # only when meshes, animations, groups or attachments change
 ```
 
 Stop the CS2 server and client first; installing into a running game fails.
@@ -273,8 +274,8 @@ End with each exported model's triangle count, and the count before for a model 
 Use a particle effect for sparks, smoke or light that fades. Try glow and animation first: they
 live in the model, while an effect is a separate file the plugin must spawn, precache and remove.
 
-1. **Write** each effect into `plugins/<plugin>/content/particles/<plugin>/<effect>/` with `modeldoc.write_vpcf`,
-   built from `modeldoc.op(...)` operators. A team variant is its own file; a part several effects
+1. **Write** each effect into `plugins/<plugin>/content/particles/<plugin>/<effect>/` with `vpcf.write_vpcf`,
+   built from `vpcf.op(...)` operators. A team variant is its own file; a part several effects
    share is a child.
 2. **Check the field names.** `resourcecompiler` silently drops fields it doesn't know, so a typo
    compiles into an effect without that setting. `uv run modelkit particles fields <class>` prints the real

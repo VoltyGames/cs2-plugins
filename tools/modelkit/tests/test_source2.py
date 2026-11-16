@@ -1,7 +1,7 @@
 import struct
 from pathlib import Path
 
-from modelkit.source2 import kv3, modeldoc, vpk, vtex
+from modelkit.source2 import kv3, vmdl, vtex
 
 
 def test_kv3_round_trip() -> None:
@@ -19,7 +19,7 @@ def test_kv3_round_trip() -> None:
 
 
 def test_vmdl_reads_back_meshes_scale_and_team_materials(tmp_path: Path) -> None:
-    path = modeldoc.write_vmdl(
+    path = vmdl.write_vmdl(
         tmp_path / "tank.vmdl",
         [("tank", "tank.dmx")],
         material_groups={
@@ -28,7 +28,7 @@ def test_vmdl_reads_back_meshes_scale_and_team_materials(tmp_path: Path) -> None
         },
         scale=0.8,
     )
-    model = modeldoc.read_vmdl(path)
+    model = vmdl.read_vmdl(path)
     assert model.meshes == ["tank.dmx"]
     assert model.scale == 0.8
     assert model.swapped == {"models/x/team.vmat", "models/x/team_red.vmat"}
@@ -42,11 +42,3 @@ def test_vtex_reads_size_from_data_block(tmp_path: Path) -> None:
     path.write_bytes(header + entry + body)
     texture = vtex.read(path)
     assert (texture.width, texture.height, texture.mip_levels) == (2048, 1024, 10)
-
-
-def test_vpk_lists_files(tmp_path: Path) -> None:
-    record = struct.pack("<IHHIIH", 0, 0, 0, 0, 0, 0xFFFF)
-    tree = b"vtex_c\0materials/particle\0glow\0" + record + b"\0 \0root\0" + record + b"\0\0\0"
-    path = tmp_path / "pak01_dir.vpk"
-    path.write_bytes(bytes(28) + tree)
-    assert vpk.list_files(path) == ["materials/particle/glow.vtex_c", "root.vtex_c"]
