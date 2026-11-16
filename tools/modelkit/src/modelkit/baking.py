@@ -28,8 +28,14 @@ under the library material's roughness, normal and wear.
 Each part bakes at the smallest of 512, 1024 and 2048 that gives it `density` pixels per game
 unit (DENSITY by default); a part or the recipe may set `density`, or a fixed `size`, instead.
 
-`at` in a mark is a point in Blender units on the face to stamp; the top-level `at` places parts
-the plugin stacks in code, for the preview render.
+`at` in a mark is a point in Blender units on the face to stamp; its `surface`, one of the part's
+old .vmat names, keeps it on that material's faces where another surface lies close by, and
+its `right`, a direction, turns the text, which otherwise runs level across the face.
+
+The top-level `at` places parts the plugin stacks in code, for the preview render.
+
+A model that keeps its own textures has a recipe of only `marks`, which `stamp_marks` presses
+into its colour texture without a bake.
 """
 
 import json
@@ -187,19 +193,21 @@ def texture_names(vmat: Path) -> set[str]:
     return {Path(value).name for value in modeldoc.read_vmat(vmat).values()}
 
 
-def remove_replaced(folder: Path, addon_folder: str, replaced: set[str]) -> list[str]:
-    """Deletes the replaced .vmat files and the textures no remaining .vmat names."""
-    names: set[str] = set()
-    for name in replaced:
-        vmat = folder / name
-        if vmat.exists():
-            names |= texture_names(vmat)
-            vmat.unlink()
+def remove_replaced(
+    folder: Path, addon_folder: str, replaced: set[str], dropped: set[str] | None = None
+) -> list[str]:
+    """Deletes the replaced .vmat files, and their textures and `dropped` ones that no remaining
+    .vmat names."""
+    names = set(dropped or ())
+    deleted = sorted(name for name in replaced if (folder / name).exists())
+    for name in deleted:
+        names |= texture_names(folder / name)
+        (folder / name).unlink()
     still_used = {name for vmat in folder.glob("*.vmat") for name in texture_names(vmat)}
     removed = [name for name in sorted(names - still_used) if (folder / name).exists()]
     for name in removed:
         (folder / name).unlink()
-    return [str(folder / name) for name in sorted(replaced)] + [str(folder / n) for n in removed]
+    return [str(folder / name) for name in deleted + removed]
 
 
 def write(plugin: str, model: str) -> list[str]:
@@ -213,6 +221,8 @@ def write(plugin: str, model: str) -> list[str]:
     replaced = {name for part in recipe["parts"].values() for name in part["surfaces"]}
     new = {part["material"] for part in recipe["parts"].values()}
     kept = {v.name for v in folder.glob("*.vmat")} - replaced - new
+    # What a part's material named before it was baked over, such as an old AO map.
+    dropped = {n for m in new if (folder / m).exists() for n in texture_names(folder / m)}
     textures, written = {}, []
     for part in recipe["parts"].values():
         stem = stem_of(part["material"])
@@ -236,5 +246,23 @@ def write(plugin: str, model: str) -> list[str]:
         export_dir=str(folder),
         relink_from=str(scratch / "source"),
     )
-    removed = [f"removed {path}" for path in remove_replaced(folder, addon_folder, replaced)]
+    # A part may keep its old material's name; that file is the new one now.
+    removed = [
+        f"removed {path}" for path in remove_replaced(folder, addon_folder, replaced - new, dropped)
+    ]
     return written + [adopted["saved"], *adopted["exported"], *removed]
+
+
+def stamp_marks(plugin: str, model: str) -> list[str]:
+    """Stamps the recipe's marks onto the model's own colour textures, with no bake: for models
+    whose hand-made textures stay. Run it once; a second run presses the marks in again."""
+    folder = game.models_dir(plugin) / model
+    recipe = read_recipe(plugin, model)
+    placed = headless.run_job("mark", folder / f"{model}.blend", marks=recipe.get("marks", []))
+    stamped = []
+    for frame in placed:
+        path = Path(frame["image"])
+        rough_path = path.with_name(path.name.replace("_color", "_rough"))
+        written = finish.stamp_image(path, rough_path if rough_path.is_file() else None, frame)
+        stamped += [str(p) for p in written]
+    return stamped

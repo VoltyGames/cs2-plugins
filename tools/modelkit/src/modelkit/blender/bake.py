@@ -124,7 +124,8 @@ def find_color_image(material: bpy.types.Material) -> bpy.types.Image | None:
     waiting = [link.from_node for link in shader.inputs["Base Color"].links]
     seen = set()
     while waiting:
-        node = waiting.pop()
+        # In input order: an old bake mixes its AO map in as the second colour.
+        node = waiting.pop(0)
         if node.name in seen:
             continue
         seen.add(node.name)
@@ -185,13 +186,15 @@ def build_finish(
     base_metal: Value = finish.get("metallic", texture(base, "metalness", True) or 0.0)
     under_metal: Value = texture(under, "metalness", True) or 1.0
 
-    # Edges: where a bevelled normal leaves the true one; noise makes their wear ragged.
+    # Edges: where a bevelled normal leaves the shading one; noise makes their wear ragged.
     geometry = n.add("ShaderNodeNewGeometry")
     edge_bevel = n.add("ShaderNodeBevel", samples=8)
     edge_bevel.inputs["Radius"].default_value = BEVEL_RADIUS * 2
     dot = n.add("ShaderNodeVectorMath", operation="DOT_PRODUCT")
     n.feed(dot, 0, edge_bevel.outputs["Normal"])
-    n.feed(dot, 1, geometry.outputs["True Normal"])
+    # Against the shading normal: on a smooth-shaded flat face it leans away from the true normal
+    # everywhere, and the whole face would read as an edge and wear through.
+    n.feed(dot, 1, geometry.outputs["Normal"])
     edge = n.remap(n.math("SUBTRACT", 1.0, find(dot.outputs, "Value")), 0.0, 0.04)
     noise = n.add("ShaderNodeTexNoise")
     noise.inputs["Scale"].default_value = 0.35
@@ -335,6 +338,9 @@ def make_atlas(
             face.select_set(face.material_index in chosen)
         bmesh.update_edit_mesh(mesh)
         bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=margin, area_weight=0.0)
+        # Packing moves only selected UVs, and a saved UV selection can leave islands out at
+        # Smart Project's scale, overlapping the packed ones.
+        bpy.ops.uv.select_all(action="SELECT")
         bpy.ops.uv.pack_islands(rotate=True, margin=margin, shape_method="CONCAVE")
         bpy.ops.object.mode_set(mode="OBJECT")
     for index, material in enumerate(saved):
@@ -391,19 +397,21 @@ def use_fastest_device(scene: bpy.types.Scene) -> str:
     return "CPU"
 
 
-def bake(
-    copy: bpy.types.Object, size: int, folder: str, samples: int = 32, ao_samples: int = 128
-) -> dict[str, str]:
-    """Bakes each channel, the normal map and AO of `copy` into RGBA PNGs in `folder`; pixels no
+def bake(copy: bpy.types.Object, size: int, folder: str, samples: int = 32) -> dict[str, str]:
+    """Bakes each channel and the normal map of `copy` into RGBA PNGs in `folder`; pixels no
     face covers stay transparent. Returns the files by channel."""
     scene = copy.users_scene[0]
     scene.render.bake.margin = 12
     scene.render.bake.margin_type = "EXTEND"
     scene.render.bake.use_clear = False
     # Slots whose faces bakeable_copy dropped keep their old material; only finishes bake.
-    materials = [m for m in copy.data.materials if m and "bake_target" in m.node_tree.nodes]
+    # By the emission nodes build_finish adds: an old pipeline's materials may still carry a
+    # stray bake_target node.
+    materials = [m for m in copy.data.materials if m and "emit_color" in m.node_tree.nodes]
     passes = [(c, "EMIT", samples) for c in CHANNELS]
-    passes += [("normal", "NORMAL", samples), ("ao", "AO", ao_samples)]
+    # No AO pass: the game shadows the model itself, and a baked AO map darkened flat panels in
+    # patches wherever another part sat close in front of them.
+    passes += [("normal", "NORMAL", samples)]
     files = {}
     for channel, kind, count in passes:
         image = bpy.data.images.new(f"bake_{channel}", size, size, alpha=True)
@@ -429,23 +437,38 @@ def bake(
     return files
 
 
-def uv_frame(ob: bpy.types.Object, point: list[float]) -> dict[str, Any]:
+def uv_frame(
+    ob: bpy.types.Object,
+    point: list[float],
+    surface: str | None = None,
+    along: list[float] | None = None,
+    uv_name: str = ATLAS_UV,
+) -> dict[str, Any]:
     """Where the face nearest `point` sits in the atlas: the UV there, and the UV step for one
-    unit right and one unit up along the face, for placing a stamp."""
+    unit right and one unit up along the face, for placing a stamp. `surface`, a material name,
+    limits the search to its faces, where another part lies close by; `along` sets the text's
+    reading direction, which otherwise runs level across the face."""
     mesh = ob.data
-    layer = mesh.uv_layers[ATLAS_UV]
+    layer = mesh.uv_layers[uv_name]
     target = ob.matrix_world.inverted() @ Vector(point)
     mesh.calc_loop_triangles()
 
     def corners(tri: bpy.types.MeshLoopTriangle) -> list[Vector]:
         return [mesh.vertices[v].co for v in tri.vertices]
 
+    candidates = [
+        tri
+        for tri in mesh.loop_triangles
+        if surface is None or mesh.materials[tri.material_index].name == surface
+    ]
+    if not candidates:
+        raise ValueError(f"no faces of {surface} on {ob.name} for a mark")
     nearest = min(
-        mesh.loop_triangles,
+        candidates,
         key=lambda tri: (closest_point_on_tri(target, *corners(tri)) - target).length,
     )
     uvs = [layer.data[loop].uv.to_3d() for loop in nearest.loops]
-    right = Vector((0, 0, 1)).cross(nearest.normal)
+    right = Vector(along) if along else Vector((0, 0, 1)).cross(nearest.normal)
     right = right.normalized() if right.length > 1e-3 else Vector((1, 0, 0))
     up = nearest.normal.cross(right).normalized()
     on_face = closest_point_on_tri(target, *corners(nearest))

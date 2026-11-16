@@ -14,7 +14,6 @@ SHIPPED = {
     "normal": ("normal", (128, 128, 255)),
     "roughness": ("rough", 255),
     "metalness": ("metal", 0),
-    "ao": ("ao", 255),
 }
 STENCIL = (0.82, 0.80, 0.74)
 TEXT_PIXELS = 96
@@ -121,3 +120,32 @@ def finish(
         Image.fromarray(pixels).save(path)
         written[channel] = path
     return written
+
+
+def stamp_image(color_path: Path, rough_path: Path | None, frame: dict[str, Any]) -> list[Path]:
+    """Stamps one mark into an existing square colour texture, and for a stencil its roughness
+    texture too; returns the files changed."""
+    image = Image.open(color_path)
+    mode = image.mode
+    pixels = np.asarray(image.convert("RGB"), dtype=np.float32) / 255
+    size = pixels.shape[0]
+    if pixels.shape[1] != size:
+        raise ValueError(f"{color_path.name} is not square")
+    style = frame.get("style", "stamp")
+    rough_image = Image.open(rough_path) if rough_path and style == "stencil" else None
+    rough = (
+        np.asarray(rough_image.convert("L").resize((size, size)), dtype=np.float32) / 255
+        if rough_image
+        else np.zeros((size, size), dtype=np.float32)
+    )
+    mask = place(text_mask(frame["text"]), frame, frame.get("height", 1.0), size)
+    stamp(pixels, rough, mask, style)
+    Image.fromarray(np.clip(pixels * 255 + 0.5, 0, 255).astype(np.uint8)).convert(mode).save(
+        color_path
+    )
+    changed = [color_path]
+    if rough_image and rough_path:
+        values = Image.fromarray(np.clip(rough * 255 + 0.5, 0, 255).astype(np.uint8))
+        values.resize(rough_image.size).convert(rough_image.mode).save(rough_path)
+        changed.append(rough_path)
+    return changed

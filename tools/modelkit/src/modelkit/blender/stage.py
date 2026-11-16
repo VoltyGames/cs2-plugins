@@ -2,6 +2,7 @@
 idle, lit, with a camera that can circle them. `remove` leaves the file as it was."""
 
 import math
+import os
 import re
 from collections.abc import Iterable, Sequence
 
@@ -13,53 +14,48 @@ SKIPPED = re.compile("hull|phys|collision|preview", re.IGNORECASE)
 PREFIX = "modelkit_stage"
 
 
+def relink_missing() -> None:
+    """Points images whose file is gone, such as paths saved from another checkout, at the same
+    name beside the .blend."""
+    folder = os.path.dirname(bpy.data.filepath)
+    for image in bpy.data.images:
+        path = bpy.path.abspath(image.filepath)
+        beside = os.path.join(folder, os.path.basename(path))
+        if path and not os.path.exists(path) and os.path.exists(beside):
+            image.filepath = beside
+            image.reload()
+
+
 def find_idle(scene_name: str) -> bpy.types.Action | None:
-    """The scene's own idle (`<scene>_idle`), else the file's first idle."""
-    idles = [a for a in bpy.data.actions if re.search(r"(^|_)idle$", a.name)]
-    own = next((a for a in idles if a.name == f"{scene_name}_idle"), None)
-    return own or next(iter(idles), None)
-
-
-def hold(ob: bpy.types.Object, action: bpy.types.Action, frame: float) -> None:
-    """Poses `ob` at `frame` of `action` whatever the scene's frame, with a one-frame NLA strip,
-    so parts in one stage can each show a different moment."""
-    # A bone the action leaves unkeyed keeps whatever pose the file was saved in.
-    for bone in ob.pose.bones:
-        bone.matrix_basis.identity()
-    ob.animation_data_create()
-    ob.animation_data.action = None
-    track = ob.animation_data.nla_tracks.new()
-    track.name = PREFIX
-    strip = track.strips.new(action.name, 0, action)
-    if action.slots:
-        strip.action_slot = action.slots[0]
-    strip.action_frame_start, strip.action_frame_end = frame, frame + 1
-    strip.frame_start, strip.frame_end = -1000, 1000
-    strip.extrapolation = "HOLD"
+    """The scene's own idle, named after the scene or the end of its name (`level1_idle` for
+    scene `turret_level1`), else the file's first idle."""
+    idles = {a.name.removesuffix("_idle"): a for a in bpy.data.actions if a.name.endswith("_idle")}
+    owners = [name for name in idles if scene_name == name or scene_name.endswith(f"_{name}")]
+    if owners:
+        return idles[max(owners, key=len)]
+    return next((a for a in bpy.data.actions if re.search(r"(^|_)idle$", a.name)), None)
 
 
 def gather(
-    scene_names: Iterable[str],
-    at: dict[str, Sequence[float]] | None = None,
-    poses: dict[str, tuple[str, float]] | None = None,
+    scene_names: Iterable[str], at: dict[str, Sequence[float]] | None = None
 ) -> bpy.types.Scene:
-    """A new scene holding the named scenes' armatures and meshes; `at` moves a part's root.
-    Each part holds its scene's idle at frame 0, or the action and frame `poses` names."""
-    at, poses = at or {}, poses or {}
+    """A new scene holding the named scenes' armatures and meshes, each part posed at its own
+    scene's idle; `at` moves a part's root."""
+    at = at or {}
     stage = bpy.data.scenes.new(PREFIX)
     for name in scene_names:
-        if name in poses:
-            action, frame = bpy.data.actions[poses[name][0]], poses[name][1]
-        else:
-            action, frame = find_idle(name), 0.0
+        idle = find_idle(name)
         for ob in bpy.data.scenes[name].objects:
             if ob.type in {"MESH", "ARMATURE"} and not SKIPPED.search(ob.name):
                 if ob.parent is None and name in at:
                     ob.location = Vector(at[name])
                 if ob.name not in stage.collection.objects:
                     stage.collection.objects.link(ob)
-                if ob.type == "ARMATURE" and action:
-                    hold(ob, action, frame)
+                if ob.type == "ARMATURE" and idle:
+                    ob.animation_data_create()
+                    ob.animation_data.action = idle
+                    if ob.animation_data.action_suitable_slots:
+                        ob.animation_data.action_slot = ob.animation_data.action_suitable_slots[0]
     stage.frame_set(0)
     return stage
 
@@ -142,10 +138,6 @@ def render(stage: bpy.types.Scene, path: str) -> str:
 
 def remove(stage: bpy.types.Scene) -> None:
     """Deletes the stage and everything it added; the gathered parts stay in their scenes."""
-    for ob in stage.objects:
-        if ob.animation_data:
-            for track in [t for t in ob.animation_data.nla_tracks if t.name == PREFIX]:
-                ob.animation_data.nla_tracks.remove(track)
     for ob in list(stage.objects):
         if ob.name.startswith(PREFIX):
             bpy.data.objects.remove(ob, do_unlink=True)

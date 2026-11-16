@@ -15,7 +15,7 @@ import typer
 from modelkit import console
 
 # Lazy, so --help skips numpy, Pillow and the audits.
-lazy from modelkit import baking, checks, game, headless, icons, particles
+lazy from modelkit import baking, checks, game, headless, particles
 lazy from modelkit.audit import compiled, find_models, textures, triangles, uv
 
 app = typer.Typer(help=__doc__, no_args_is_help=True, pretty_exceptions_enable=False)
@@ -143,31 +143,6 @@ def render(
 
 
 @app.command()
-def icon(
-    plugin: PluginArgument,
-    cards: Annotated[
-        list[str] | None,
-        typer.Argument(help="Cards to render; default: every card in bake/icons.json"),
-    ] = None,
-) -> None:
-    """Render store cards from the models into panorama/images/<plugin>/."""
-    try:
-        listed = icons.read_list(plugin)
-    except FileNotFoundError as missing:
-        raise fail(str(missing)) from None
-    unknown = set(cards or ()) - set(listed["icons"])
-    if unknown:
-        raise fail(f"no card {', '.join(sorted(unknown))} in bake/icons.json")
-    size = tuple(listed.get("size", (384, 256)))
-    for card in cards or listed["icons"]:
-        try:
-            out = icons.render(plugin, card, listed["icons"][card], (size[0], size[1]))
-        except (FileNotFoundError, headless.BlenderError) as failed:
-            raise fail(str(failed)) from None
-        console.done(f"wrote {out}")
-
-
-@app.command()
 def bake(
     plugin: PluginArgument,
     model: Annotated[
@@ -204,6 +179,26 @@ def bake(
     for path in result.renders:
         console.info(f"preview {path}")
     console.done(f"review the renders, then: uv run modelkit bake {plugin} {model} --write")
+
+
+@app.command()
+def mark(
+    plugin: PluginArgument,
+    model: Annotated[
+        str,
+        typer.Argument(help="Model folder; its marks are in plugins/<plugin>/bake/<model>.json"),
+    ],
+) -> None:
+    """Stamp the recipe's maker's marks onto a model's own textures, without a bake. Run it once
+    per texture set: a second run presses the marks in again."""
+    try:
+        changed = baking.stamp_marks(plugin, model)
+    except (FileNotFoundError, ValueError, headless.BlenderError) as failed:
+        raise fail(str(failed)) from None
+    for path in changed:
+        console.info(f"stamped {path}")
+    command = f"uv run voltmod content compile {plugin} models/{plugin}/{model}"
+    console.done(f"now compile: {command} --install client")
 
 
 @audit_app.command("textures")

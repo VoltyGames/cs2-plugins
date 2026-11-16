@@ -20,7 +20,6 @@ user approves.
 | `uv run modelkit check` | Checks Blender, Source Tools, Codex, Git LFS and the Workshop Tools |
 | `uv run modelkit audit` | `textures`, `uv`, `compiled` and `triangles`: why a model looks flat or blurry, and what it can lose |
 | `uv run modelkit render` | Renders a whole model at eye level, for concept work |
-| `uv run modelkit icon` | Renders the plugin's store cards from the models, listed in `bake/icons.json` |
 | `uv run modelkit optimize` | Trims triangles, keeping a part's trim only if renders from all round still match |
 | `uv run modelkit particles` | Checks `.vpcf` field names; lists a class's fields and the game's particle textures |
 | `uv run voltmod content compile` | Compiles one model or particle folder and installs it |
@@ -105,7 +104,8 @@ the code in the same task.
 
 Prefer a baked set over tiled textures: `uv run modelkit bake <plugin> <model>` unwraps the
 named materials into one atlas, bakes CC0 materials from Poly Haven or ambientCG with worn edges,
-grime, dust and streaks into colour, roughness, metalness, normal and AO maps, and stamps the
+grime, dust and streaks into colour, roughness, metalness and normal maps (no AO map: the game
+shadows the model itself), and stamps the
 maker's mark. Its recipe is `plugins/<plugin>/bake/<model>.json`; the format is in
 `modelkit/baking.py`, and `plugins/stronghold/bake/wall.json` is a worked one.
 
@@ -113,19 +113,21 @@ maker's mark. Its recipe is `plugins/<plugin>/bake/<model>.json`; the format is 
   the user, tune the recipe, bake again.
 - `--write` ships the preview: textures and `.vmat` into the model folder, the `.blend` saved,
   the DMX re-exported, the replaced `.vmat` files and their unused textures deleted. Then compile.
-- Structures get solid weathered olive drab (the `olive_drab` finish in any Stronghold recipe);
-  recipe colours are linear, as Blender takes them.
+- Structures get solid olive drab with light wear (the `olive_drab` finish in any Stronghold
+  recipe): keep grime, dust and streaks near 0.1 and `normal_strength` near 0.5, since heavier
+  weathering reads as noise in game. Recipe colours are linear, as Blender takes them.
 - Leave `size` out: each part bakes at the smallest of 512, 1024 and 2048 reaching 12 pixels per
   game unit. Props seen up close set `"density": 16`.
 - To re-bake a model whose `.blend` already holds its baked material, pass
   `--source <revision>`: a commit of the plugin's repo from before its first bake.
+- Models with hand-made single-atlas textures (tank, watchtower, helicopters and the rest
+  without a baked recipe) keep them: re-baking them read flatter and blurrier in game. Their
+  recipe holds only `marks`, and `uv run modelkit mark <plugin> <model>` stamps those onto the
+  existing colour texture once.
 - Keep recipes out of `content/`: `voltmod content compile --prune` deletes files nothing
   references there.
 - A finish with `"artwork": true` keeps the surface's own colour texture (hazard stripes, signs)
   and takes only roughness, normal and wear from the library material.
-- After `--write`, re-render the model's store cards: `uv run modelkit icon <plugin> <card>`. A
-  card in `bake/icons.json` names its `model` and may set `view`, `skip`, `at` and `pose`
-  (`{"<scene>": ["<action>", frame]}`, for a part whose idle is a poor picture).
 
 For a texture no CC0 material covers, generate one. List `~/.codex/generated_images/` before the
 first run, so cleanup knows which folders are new. Then run Codex in the background while you

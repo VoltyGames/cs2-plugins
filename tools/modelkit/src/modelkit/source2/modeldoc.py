@@ -73,13 +73,13 @@ def write_vmat(
 
 
 def write_baked_vmat(path: FilePath, folder: str, stem: str) -> FilePath:
-    """Writes a csgo_complex material over a baked texture set in `folder`: <stem>_color, _normal,
-    _rough, _metal and _ao PNGs, as the vehicles use."""
+    """Writes a csgo_complex material over a baked texture set in `folder`: <stem>_color,
+    _normal, _rough and _metal PNGs; occlusion is left to the game's own shadows."""
     keys = [
         ("shader", "csgo_complex.vfx"),
         ("F_METALNESS_TEXTURE", "1"),
         ("g_vColorTint", "[1.000000 1.000000 1.000000 0.000000]"),
-        ("TextureAmbientOcclusion", f"{folder}{stem}_ao.png"),
+        ("TextureAmbientOcclusion", "materials/default/default_ao.tga"),
         ("TextureColor", f"{folder}{stem}_color.png"),
         ("TextureMetalness", f"{folder}{stem}_metal.png"),
         ("TextureNormal", f"{folder}{stem}_normal.png"),

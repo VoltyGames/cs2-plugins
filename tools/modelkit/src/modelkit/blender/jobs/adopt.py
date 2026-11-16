@@ -8,7 +8,6 @@ from typing import Any
 import bpy
 
 from modelkit.blender import export, stage
-from modelkit.blender.bake import find
 
 # Three quarters from the front left, the back right, and from above.
 VIEWS = ((1.0, -0.85, 0.38), (-1.0, 0.85, 0.3), (0.4, -0.3, 1.2))
@@ -29,12 +28,7 @@ def show_textures(material: bpy.types.Material, maps: dict[str, str]) -> None:
         node.image.colorspace_settings.name = "Non-Color" if data else "sRGB"
         return node.outputs["Color"]
 
-    ao = nodes.new("ShaderNodeMix")
-    ao.data_type, ao.blend_type = "RGBA", "MULTIPLY"
-    find(ao.inputs, "Factor_Float").default_value = 1.0
-    links.new(image("color", False), find(ao.inputs, "A_Color"))
-    links.new(image("ao", True), find(ao.inputs, "B_Color"))
-    links.new(find(ao.outputs, "Result_Color"), shader.inputs["Base Color"])
+    links.new(image("color", False), shader.inputs["Base Color"])
     links.new(image("roughness", True), shader.inputs["Roughness"])
     links.new(image("metalness", True), shader.inputs["Metallic"])
     normal = nodes.new("ShaderNodeNormalMap")

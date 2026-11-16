@@ -4,12 +4,13 @@ Leaves the result in a scratch .blend for review; the model's own .blend changes
 `adopt` job writes it after approval.
 """
 
+import math
 from typing import Any
 
 import bpy
 import numpy as np
 
-from modelkit.blender import bake, measure
+from modelkit.blender import bake, measure, stage
 
 
 def replace_materials(ob: bpy.types.Object, old: set[str], new: bpy.types.Material) -> None:
@@ -31,6 +32,8 @@ def atlas_density(ob: bpy.types.Object, materials: set[str]) -> float:
 
 
 SIZES = (512, 1024, 2048)
+# Edges meeting at more than this are shaded sharp; a 16-sided cylinder's are 22.5 degrees.
+SHARP_ANGLE = math.radians(30)
 
 
 def choose_size(density: float, target: float, largest: int) -> int:
@@ -56,11 +59,20 @@ def main(
     pixels free along the atlas's top and right edges, for a hidden mark. Without a size, each
     part bakes at the smallest standard size reaching its density. Writes raw RGBA bakes into
     `folder` and the baked scenes to `save_to`."""
+    stage.relink_missing()
+    objects = [bpy.data.objects[name] for name in parts]
+    painted_on = {}
+    for ob in objects:
+        # An earlier bake's layer: make_atlas would unwrap over the UVs its texture is painted on.
+        if ob.data.uv_layers.active.name == bake.ATLAS_UV:
+            ob.data.uv_layers.active.name = "painted"
+        painted_on[ob.name] = ob.data.uv_layers.active.name
     results = {}
-    for object_name, part in parts.items():
-        ob = bpy.data.objects[object_name]
+    for ob, (object_name, part) in zip(objects, parts.items(), strict=True):
         replaced = set(part["surfaces"])
-        painted_on = ob.data.uv_layers.active.name
+        # Hard surface: a smooth-shaded flat panel averages its normals with its side walls, which
+        # shades it in dark diagonal halves, in the AO bake and in game alike.
+        ob.data.set_sharp_from_angle(angle=SHARP_ANGLE)
         bake.make_atlas(ob, replaced)
         target = part.get("density", density)
         chosen = (
@@ -78,7 +90,7 @@ def main(
                     working,
                     finishes[part["surfaces"][material.name]],
                     ob.dimensions.z,
-                    (image, painted_on) if image else None,
+                    (image, painted_on[object_name]) if image else None,
                 )
                 copy.data.materials[index] = working
         device = bake.use_fastest_device(copy.users_scene[0])
@@ -86,7 +98,7 @@ def main(
         bpy.data.objects.remove(copy, do_unlink=True)
 
         frames = [
-            {**mark, **bake.uv_frame(ob, mark["at"])}
+            {**mark, **bake.uv_frame(ob, mark["at"], mark.get("surface"), mark.get("right"))}
             for mark in marks
             if mark.get("part", object_name) == object_name
         ]
@@ -94,7 +106,10 @@ def main(
             part["material"]
         )
         for scene_object in ob.users_scene[0].objects:
-            if scene_object.type == "MESH":
+            # Other parts bake their own surfaces; hulls and the like follow this one.
+            if scene_object.type == "MESH" and (
+                scene_object == ob or scene_object.name not in parts
+            ):
                 replace_materials(scene_object, replaced, target)
         for layer in [uv for uv in ob.data.uv_layers if uv.name != bake.ATLAS_UV]:
             ob.data.uv_layers.remove(layer)
