@@ -137,7 +137,7 @@ cp deploy/secrets/panel-a/.env.example deploy/secrets/panel-a/.env
 | `RCON_PASSWORD` | `poe rcon`; Docker instances also start with it |
 | `CHEAT_API_KEY` | admin-system's `${CHEAT_API_KEY}` |
 | `PANEL_API_KEY` | panel servers |
-| `SFTP_USER` | SFTP servers: the panel user; the login adds `.<server id>` unless it already has one |
+| `SFTP_USER` | SFTP servers: the panel user; the login adds `.<server id>` |
 | `SFTP_PASSWORD` | SFTP servers: the panel account password |
 | `SSH_KEY_FILE` | Docker hosts: the private key path |
 | `GSLT_<instance>` | Docker instances; empty starts in LAN mode |

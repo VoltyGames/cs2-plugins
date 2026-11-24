@@ -141,5 +141,5 @@ class SftpServer(PterodactylServer):
         return self.sftp_host or self.host
 
     def sftp_login(self, user: str) -> str:
-        """Pterodactyl's `<panel user>.<server id>`; a user that has the id already stays."""
-        return user if "." in user else f"{user}.{self.id}"
+        """Pterodactyl's `<panel user>.<server id>`."""
+        return f"{user}.{self.id}"

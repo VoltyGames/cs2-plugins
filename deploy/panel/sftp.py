@@ -18,6 +18,7 @@ class SftpFiles:
         known_hosts.parent.mkdir(mode=0o700, exist_ok=True)
         known_hosts.touch(exist_ok=True)
         self._client = paramiko.SSHClient()
+        self._has_posix_rename = True
         self._client.load_host_keys(str(known_hosts))
         # Like ssh's accept-new: trust a node on first contact, refuse one whose key changed.
         self._client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -85,13 +86,18 @@ class SftpFiles:
         # Overwriting a loaded .so in place crashes the server; renamed over, it keeps the old one.
         staging = f"{path}.upload"
         self._sftp.putfo(data, staging, confirm=True)
+        if self._has_posix_rename:
+            try:
+                self._sftp.posix_rename(staging, path)
+                return
+            except OSError:
+                self._has_posix_rename = False
+        # Without the posix-rename extension, a plain rename refuses an existing target.
         try:
-            self._sftp.posix_rename(staging, path)
-        except OSError:
-            # Without the posix-rename extension, a plain rename refuses an existing target.
-            if self._find(path):
-                self._sftp.remove(path)
-            self._sftp.rename(staging, path)
+            self._sftp.remove(path)
+        except FileNotFoundError:
+            pass
+        self._sftp.rename(staging, path)
 
     def _make_dirs(self, path: str) -> None:
         current = ""
