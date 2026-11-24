@@ -221,11 +221,12 @@ as the `id`, since the SFTP login is `<panel user>.<server id>`:
       - { name: main, port: 27015 }
 ```
 
-`deploy push` signs in to the node's SFTP with `SFTP_USER` and `SFTP_PASSWORD`, patches `gameinfo.gi` as above and
-uploads the addons tree while the server keeps running: each file goes in under a temporary name
+`deploy push` signs in to the node's SFTP with `SFTP_USER` and `SFTP_PASSWORD` and uploads the
+addons tree while the server keeps running: each file goes in under a temporary name
 and is renamed over the old one, so a loaded `.so` is never overwritten. It then removes unassigned
 plugins. With no API it cannot stop or start the server, so restart it from the panel to load the
-new files. `deploy restart` only reminds you of that. The first connection trusts the node's host
+new files. `deploy restart` only reminds you of that. It leaves `gameinfo.gi` as the host set it
+up, so that file must already load VoltMod. The first connection trusts the node's host
 key and saves it to `~/.ssh/known_hosts`; a changed key fails the deploy.
 
 ## Docker hosts

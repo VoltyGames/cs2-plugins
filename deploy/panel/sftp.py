@@ -63,8 +63,16 @@ class SftpFiles:
         return present
 
     def is_link(self, path: str) -> bool:
-        attributes = self._find(path)
-        return bool(attributes and attributes.st_mode and stat.S_ISLNK(attributes.st_mode))
+        # Wings fails lstat on a link into a shared install, but its parent's listing marks it.
+        directory, _, name = path.rpartition("/")
+        try:
+            entries = self._sftp.listdir_attr(directory or "/")
+        except FileNotFoundError:
+            return False
+        return any(
+            entry.filename == name and entry.st_mode and stat.S_ISLNK(entry.st_mode)
+            for entry in entries
+        )
 
     def upload_tree(self, source: Path, destination: str) -> int:
         """Copy source's files into destination, keeping files already there; return the count."""
