@@ -1,4 +1,4 @@
-"""Deploy CS2 plugin servers: panel servers over the panel API, Docker hosts over SSH.
+"""Deploy CS2 plugin servers: panel servers over the panel API or SFTP, Docker hosts over SSH.
 
 Run from the repository root: uv run poe deploy <command>
 """
@@ -17,11 +17,12 @@ from deploy.errors import DeployError
 # Lazy, so --help skips pydantic, PyYAML and httpx.
 lazy from deploy.bundle.builder import AddonsBuilder
 lazy from deploy.bundle.packager import AddonPackager
-lazy from deploy.config.inventory import Inventory
-lazy from deploy.config.servers import DockerServer, PanelServer
+lazy from deploy.config.inventory import AnyServer, Inventory
+lazy from deploy.config.servers import DockerServer, SftpServer
 lazy from deploy.deployer import Deployer
 lazy from deploy.docker.deployer import DockerDeployer
 lazy from deploy.panel.deployer import PanelDeployer
+lazy from deploy.panel.sftp_deployer import SftpDeployer
 
 app = typer.Typer(help=__doc__, no_args_is_help=True, pretty_exceptions_enable=False)
 
@@ -34,11 +35,11 @@ PluginsArgument = Annotated[
 ]
 
 
-def create_deployer(
-    inventory: Inventory, server: DockerServer | PanelServer, dry_run: bool
-) -> Deployer[Any]:
+def create_deployer(inventory: Inventory, server: AnyServer, dry_run: bool) -> Deployer[Any]:
     if isinstance(server, DockerServer):
         return DockerDeployer(inventory, server, dry_run=dry_run)
+    if isinstance(server, SftpServer):
+        return SftpDeployer(inventory, server, dry_run=dry_run)
     return PanelDeployer(inventory, server, dry_run=dry_run)
 
 
@@ -59,7 +60,10 @@ def ci_matrix(server: ServerOption = None) -> None:
     """Print what a deploy covers, as GitHub output lines."""
     inventory = Inventory.load()
     servers = inventory.targets(server)
-    matrix = [{"id": item.id, "environment": item.environment} for item in servers]
+    matrix = [
+        {"id": item.id, "environment": item.environment, "secrets": item.secrets_name}
+        for item in servers
+    ]
     print(f"servers={json.dumps(matrix, separators=(',', ':'))}")
     print(f"docker={'true' if any(item.kind == 'docker' for item in servers) else 'false'}")
     print(f"runtime_image={inventory.runtime_image}")

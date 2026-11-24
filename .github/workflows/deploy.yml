@@ -151,7 +151,7 @@ jobs:
         env:
           SERVER_ENV: ${{ secrets.SERVER_ENV }}
           SSH_KEY: ${{ secrets.SSH_KEY }}
-          ENV_FILE: deploy/secrets/${{ matrix.server.id }}/.env
+          ENV_FILE: deploy/secrets/${{ matrix.server.secrets }}/.env
         run: |
           if [ -z "$SERVER_ENV" ]; then
             echo "ERROR: the ${{ matrix.server.environment }} environment has no SERVER_ENV secret" >&2

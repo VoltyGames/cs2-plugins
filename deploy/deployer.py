@@ -17,7 +17,7 @@ class Deployer[S: Server](ABC):
     def __init__(self, inventory: Inventory, server: S, *, dry_run: bool = False) -> None:
         self.inventory = inventory
         self.server = server
-        self.secrets = ServerSecrets(server.id)
+        self.secrets = ServerSecrets(server.secrets_name)
         self.dry_run = dry_run
         self.addons = AddonsBuilder(inventory, server, self.secrets)
 

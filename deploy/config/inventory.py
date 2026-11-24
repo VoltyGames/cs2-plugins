@@ -4,9 +4,11 @@ from typing import Annotated, Any, ClassVar, Self
 import yaml
 from pydantic import Field, ValidationError, field_validator, model_validator
 
-from deploy.config.servers import DockerServer, Instance, Model, PanelServer, Server
+from deploy.config.servers import DockerServer, Instance, Model, PanelServer, Server, SftpServer
 from deploy.errors import DeployError
 from deploy.paths import DEPLOY_DIR
+
+type AnyServer = DockerServer | PanelServer | SftpServer
 
 
 class Plugin(Model):
@@ -31,7 +33,7 @@ class Inventory(Model):
     runtime_image: str
     database: Database = Field(default_factory=Database)
     plugins: dict[str, Plugin]
-    servers: list[Annotated[DockerServer | PanelServer, Field(discriminator="kind")]]
+    servers: list[Annotated[DockerServer | PanelServer | SftpServer, Field(discriminator="kind")]]
 
     @classmethod
     def load(cls) -> Self:
@@ -61,19 +63,19 @@ class Inventory(Model):
                     raise ValueError(f"server '{server.id}' uses undeclared plugins: {missing}")
         return self
 
-    def server(self, server_id: str) -> DockerServer | PanelServer:
+    def server(self, server_id: str) -> AnyServer:
         for server in self.servers:
             if server.id == server_id:
                 return server
         raise DeployError(f"server '{server_id}' not found in {self.PATH.name}")
 
-    def targets(self, server_id: str | None) -> list[DockerServer | PanelServer]:
+    def targets(self, server_id: str | None) -> list[AnyServer]:
         """The named server, or every enabled one."""
         if server_id:
             return [self.server(server_id)]
         return [server for server in self.servers if server.enabled]
 
-    def target(self, server_id: str | None) -> DockerServer | PanelServer:
+    def target(self, server_id: str | None) -> AnyServer:
         """The named server, or the only enabled one."""
         servers = self.targets(server_id)
         if len(servers) != 1:

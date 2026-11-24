@@ -34,6 +34,8 @@ class Server(Model):
     kind: str
     host: str
     environment: str | None = None
+    # The deploy/secrets folder to read; servers on one panel account can share one.
+    secrets: str | None = None
     enabled: bool = True
     plugins: list[str] = Field(default_factory=list)
     instances: list[Instance] = Field(min_length=1)
@@ -45,6 +47,10 @@ class Server(Model):
             if len(values) != len(set(values)):
                 raise ValueError(f"server '{self.id}' has two instances with the same {field}")
         return self
+
+    @property
+    def secrets_name(self) -> str:
+        return self.secrets or self.id
 
     def list_plugins(self, instance: Instance) -> list[str]:
         """The instance's own list replaces the server's; it does not extend it."""
@@ -83,15 +89,25 @@ class DockerServer(Server):
         return f"{self.id}-cs2-{instance.name}"
 
 
-class PanelServer(Server):
+class PterodactylServer(Server):
+    """A Pterodactyl panel server: one CS2 process whose files sit under the container root."""
+
+    game_dir: str = "/game/csgo"
+    instances: list[Instance] = Field(min_length=1, max_length=1)
+
+    @field_validator("game_dir")
+    @classmethod
+    def strip_trailing_slash(cls, path: str) -> str:
+        return path.rstrip("/")
+
+
+class PanelServer(PterodactylServer):
     """A Pterodactyl panel server, deployed through the panel's client API."""
 
     PAGE_URL: ClassVar[re.Pattern[str]] = re.compile(r"https?://[^/]+/server/[^/]+/?")
 
     kind: Literal["panel"]
     panel_url: str
-    game_dir: str = "/game/csgo"
-    instances: list[Instance] = Field(min_length=1, max_length=1)
 
     @field_validator("panel_url")
     @classmethod
@@ -102,13 +118,28 @@ class PanelServer(Server):
             )
         return url
 
-    @field_validator("game_dir")
-    @classmethod
-    def strip_trailing_slash(cls, path: str) -> str:
-        return path.rstrip("/")
-
     @property
     def api_url(self) -> str:
         url = urlsplit(self.panel_url)
         server = url.path.rstrip("/").rsplit("/", 1)[1]
         return f"{url.scheme}://{url.netloc}/api/client/servers/{server}"
+
+
+class SftpServer(PterodactylServer):
+    """A Pterodactyl panel server with no API key, deployed over its node's SFTP.
+
+    Its id is the panel's server id, which the SFTP login ends with.
+    """
+
+    kind: Literal["sftp"]
+    # The node's address, when it differs from the game host.
+    sftp_host: str | None = None
+    sftp_port: int = 2022
+
+    @property
+    def sftp_address(self) -> str:
+        return self.sftp_host or self.host
+
+    def sftp_login(self, user: str) -> str:
+        """Pterodactyl's `<panel user>.<server id>`; a user that has the id already stays."""
+        return user if "." in user else f"{user}.{self.id}"

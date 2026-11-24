@@ -76,3 +76,63 @@ servers:
       - main-menu
     instances:
       - { name: main, port: 27015, map: de_dust2, hostname: "CS2 Main", insecure: true }
+
+  - id: a7b9015d
+    kind: sftp
+    enabled: false
+    environment: prod-elect-host
+    secrets: elect-host
+    host: 37.230.228.98
+    sftp_host: node1.elect-host.com
+    plugins:
+      - stronghold
+    instances:
+      - { name: main, port: 27047 }
+
+  - id: b1b893c4
+    kind: sftp
+    enabled: false
+    environment: prod-elect-host
+    secrets: elect-host
+    host: 37.230.228.98
+    sftp_host: node1.elect-host.com
+    plugins:
+      - stronghold
+    instances:
+      - { name: main, port: 27038 }
+
+  - id: 1ddf8c6c
+    kind: sftp
+    enabled: false
+    environment: prod-elect-host
+    secrets: elect-host
+    host: 37.230.228.98
+    sftp_host: node1.elect-host.com
+    plugins:
+      - stronghold
+    instances:
+      - { name: main, port: 27040 }
+
+  - id: 3c5890b4
+    kind: sftp
+    enabled: false
+    environment: prod-elect-host
+    secrets: elect-host
+    host: 37.230.228.98
+    sftp_host: node1.elect-host.com
+    plugins:
+      - stronghold
+    instances:
+      - { name: main, port: 27030 }
+
+  - id: 4799c9fb
+    kind: sftp
+    enabled: false
+    environment: prod-elect-host
+    secrets: elect-host
+    host: 37.230.228.98
+    sftp_host: node1.elect-host.com
+    plugins:
+      - stronghold
+    instances:
+      - { name: main, port: 27042 }

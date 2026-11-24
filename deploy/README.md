@@ -13,11 +13,12 @@ Without `--server`, `deploy push` and `deploy restart` act on every enabled serv
 `deploy tunnel` need a single enabled server or an explicit `--server`. `--instance` is required
 when a server runs more than one instance.
 
-Two server kinds:
+Three server kinds:
 
 | Kind | What it is | How the CLI reaches it |
 | --- | --- | --- |
 | `panel` | A Pterodactyl panel server | the panel's client API - no SSH, no Docker |
+| `sftp` | A Pterodactyl panel server with no API key | the node's SFTP; you restart it from the panel |
 | `docker` | A Linux machine you control, one container per instance from `joedwards32/cs2` | SSH |
 
 For a local server use `uv run poe run <plugin>`; see
@@ -33,6 +34,7 @@ For a local server use `uv run poe run <plugin>`; see
 - `deploy/secrets/<id>/.env` for each server you deploy (see [Secrets](#secrets)).
 - Docker hosts: a prepared host (see [Docker hosts](#docker-hosts)) and an SSH key.
 - Panel servers: an API key from the panel's Account -> API Credentials page.
+- SFTP servers: the panel user and account password.
 
 ## Inventory
 
@@ -80,19 +82,21 @@ servers:
 | `plugins.<name>.settings` | plugin | `{}` | what production changes in that plugin's settings |
 | `id`, `kind`, `host` | server | required | `kind` is `panel` or `docker` |
 | `environment` | server | none | the GitHub Environment holding this server's secrets |
+| `secrets` | server | the id | the `deploy/secrets/` folder it reads; servers on one panel account can share one |
 | `enabled` | server | `true` | `false` skips it when no `--server` is given |
 | `plugins` | server | `[]` | which plugins its instances run |
 | `ssh_user`, `ssh_port` | docker | `steam`, `22` | |
 | `cs2_root`, `deploy_root` | docker | `/home/steam/cs2`, `/home/steam/cs2/deploy` | |
 | `panel_url` | panel | required | the server's panel page, `https://<panel>/server/<id>` |
-| `game_dir` | panel | `/game/csgo` | |
+| `game_dir` | panel, sftp | `/game/csgo` | |
+| `sftp_host`, `sftp_port` | sftp | `host`, `2022` | the SFTP server address on the Settings tab |
 | `name`, `port` | instance | required | |
 | `hostname` | instance | `CS2 <name>` | |
 | `map` | instance | `de_dust2` | |
 | `insecure` | instance | `false` | Docker hosts: start with `-insecure` |
 | `plugins` | instance | the server's list | replaces it; it does not extend it |
 
-A panel server takes exactly one instance.
+A panel or SFTP server takes exactly one instance.
 
 ### Plugin settings
 
@@ -118,7 +122,8 @@ A plugin with a `database` gets its `database` section from the inventory's `dat
 
 ## Secrets
 
-Each server reads `deploy/secrets/<id>/.env`. A variable already set in the process fills a
+Each server reads `deploy/secrets/<id>/.env`, or `deploy/secrets/<secrets>/.env` when the
+inventory names a shared folder. A variable already set in the process fills a
 key the file lacks, and `SSH_KEY_FILE` from the process wins outright so CI can use its own key.
 The repository's root `.env` is never read.
 
@@ -132,6 +137,8 @@ cp deploy/secrets/panel-a/.env.example deploy/secrets/panel-a/.env
 | `RCON_PASSWORD` | `poe rcon`; Docker instances also start with it |
 | `CHEAT_API_KEY` | admin-system's `${CHEAT_API_KEY}` |
 | `PANEL_API_KEY` | panel servers |
+| `SFTP_USER` | SFTP servers: the panel user; the login adds `.<server id>` unless it already has one |
+| `SFTP_PASSWORD` | SFTP servers: the panel account password |
 | `SSH_KEY_FILE` | Docker hosts: the private key path |
 | `GSLT_<instance>` | Docker instances; empty starts in LAN mode |
 
@@ -197,6 +204,29 @@ again.
 
 Turn off the egg's validate-on-start option if it has one. Validation restores `gameinfo.gi` and
 VoltMod stops loading.
+
+### Without an API key
+
+Some panels give no API key. Declare those servers with `kind: sftp`, using the panel's server id
+as the `id`, since the SFTP login is `<panel user>.<server id>`:
+
+```yaml
+  - id: abc12345
+    kind: sftp
+    secrets: my-panel-account
+    host: 203.0.113.30
+    sftp_host: node1.example.com
+    plugins: [admin-system, bhop]
+    instances:
+      - { name: main, port: 27015 }
+```
+
+`deploy push` signs in to the node's SFTP with `SFTP_USER` and `SFTP_PASSWORD`, patches `gameinfo.gi` as above and
+uploads the addons tree while the server keeps running: each file goes in under a temporary name
+and is renamed over the old one, so a loaded `.so` is never overwritten. It then removes unassigned
+plugins. With no API it cannot stop or start the server, so restart it from the panel to load the
+new files. `deploy restart` only reminds you of that. The first connection trusts the node's host
+key and saves it to `~/.ssh/known_hosts`; a changed key fails the deploy.
 
 ## Docker hosts
 
@@ -287,7 +317,7 @@ deploy/
   paths.py, errors.py, rcon.py, console.py
   config/                     servers.py (models), inventory.py, secrets.py
   bundle/                     packager.py, settings.py, builder.py
-  panel/                      api.py, gameinfo.py, deployer.py
+  panel/                      api.py, gameinfo.py, deployer.py; files.py, sftp.py, sftp_deployer.py
   docker/                     ssh.py, tunnel.py, host.py, compose.py, deployer.py
 ```
 

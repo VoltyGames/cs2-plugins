@@ -2,7 +2,7 @@ import re
 from typing import Self
 
 from deploy.errors import DeployError
-from deploy.panel.api import PanelApi
+from deploy.panel.files import ServerFiles
 from deploy.paths import FILES_DIR
 
 
@@ -14,8 +14,10 @@ class GameInfo:
     # Valve's file from an up-to-date dedicated server; refresh it when a CS2 update changes it.
     TEMPLATE = FILES_DIR / "panel" / "gameinfo.gi"
 
-    def __init__(self, api: PanelApi, game_dir: str, current: str, shared_install: bool) -> None:
-        self._api = api
+    def __init__(
+        self, files: ServerFiles, game_dir: str, current: str, shared_install: bool
+    ) -> None:
+        self._files = files
         self._game_dir = game_dir
         self.current = current
         self.shared_install = shared_install
@@ -23,14 +25,14 @@ class GameInfo:
         self.patched = self.with_voltmod(source)
 
     @classmethod
-    def read(cls, api: PanelApi, game_dir: str) -> Self:
+    def read(cls, files: ServerFiles, game_dir: str) -> Self:
         # Hosts that link every server to one shared CS2 install refuse to read those links.
-        if api.is_link(f"{game_dir}/steam.inf"):
-            return cls(api, game_dir, "", shared_install=True)
-        current = api.read(f"{game_dir}/gameinfo.gi")
+        if files.is_link(f"{game_dir}/steam.inf"):
+            return cls(files, game_dir, "", shared_install=True)
+        current = files.read(f"{game_dir}/gameinfo.gi")
         if not current:
             raise DeployError(f"{game_dir}/gameinfo.gi not found; is CS2 installed there?")
-        return cls(api, game_dir, current, shared_install=False)
+        return cls(files, game_dir, current, shared_install=False)
 
     @classmethod
     def with_voltmod(cls, text: str) -> str:
@@ -52,6 +54,6 @@ class GameInfo:
     def write(self) -> None:
         """Save the patched file; CS2 reads it only at startup, so it is safe while running."""
         if self.shared_install:
-            self._api.delete(self._game_dir, ["gameinfo.gi"])
+            self._files.delete(self._game_dir, ["gameinfo.gi"])
         if self.patched != self.current:
-            self._api.write(f"{self._game_dir}/gameinfo.gi", self.patched)
+            self._files.write(f"{self._game_dir}/gameinfo.gi", self.patched)
