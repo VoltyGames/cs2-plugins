@@ -4,20 +4,19 @@ The upstream commit whose changes the framework and plugins were last read again
 The watcher bumps the pin daily without reading anything, so the pin is not this baseline. Update
 this file when an adoption is committed.
 
-- s2sdk: `21654ee5` (`origin/cs2`, 2026-11-11), reviewed in full; built against the
-  2026.11.11 pin `4220cad5`. The 12 commits between them touch nothing we use.
-- voltmod: `861606b0` (2026-11-11), "refactor: use s2sdk's binding, chainer, vector and solid types";
-  the workaround is `e594a467`. The previous adoption was `58ffe713` (2026-10-16, s2sdk `e7086d0f`).
-  A follow-up, `b53b26d4`..`7e8f6220` and released as 1.8.8, adopted:
-  - the CS user message protos;
-  - `PlayerCommandStatus_t` and `GetPlayerUserId`;
-  - `Get/SetClientListening` (`runtime.Voice`);
-  - the controller's `m_bIsHLTV`.
+- s2sdk: `58bebeb6` (`origin/cs2`, 2026-11-13), reviewed in full; pinned as 2026.11.13.
+- voltmod: `b73bfb98` (2026-11-23), "refactor: use s2sdk's NetMessageInfo_t and drop the message type
+  workaround"; it replaced `MessageTypes.*` with the SDK's `NetMessageInfo_t` and `INetworkMessages`.
+  The previous adoption was `861606b0` (2026-11-11, s2sdk `21654ee5`).
 
 ## Open workarounds for upstream gaps
 
-- `.claude/notes/2026-11-11-network-message-types.md`: networksystem changed in CS2 build 2000943,
-  and s2sdk does not declare the new layout yet.
+- `CSource2Server::GameFrame` in `gamedata.jsonc` (voltmod `8f69a10b`): CS2 build 2000950 added an
+  `ISource2Server` virtual between `GameCreateNetworkStringTables` and `WriteSignonMessages`, so every
+  SDK slot from there on is one short and the SDK's `GameFrame` is `ApplyGameSettings`. Once s2sdk
+  declares it, hook `&IServerGameDLL::GameFrame` again in `Host/EngineHooks.cpp` and drop the entry and
+  `Bindings::GameFrame`. Until then call no `ISource2Server` virtual past `GameCreateNetworkStringTables`
+  through the SDK.
 - `CBaseEntity::SubclassVData` in `gamedata.jsonc`: the SDK declares no VData accessor, so
   `Entity::FindWeaponData` reads the pointer 4 bytes past the schema's `m_nSubclassID`. Re-check it
   after a CS2 update by comparing `BaseName` with `ClassName()` for stock weapons.
