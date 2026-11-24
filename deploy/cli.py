@@ -7,7 +7,7 @@ import json
 import shlex
 import subprocess
 import sys
-from typing import Annotated, Any
+from typing import Annotated, Any, assert_never
 
 import typer
 
@@ -18,7 +18,7 @@ from deploy.errors import DeployError
 lazy from deploy.bundle.builder import AddonsBuilder
 lazy from deploy.bundle.packager import AddonPackager
 lazy from deploy.config.inventory import AnyServer, Inventory
-lazy from deploy.config.servers import DockerServer, SftpServer
+lazy from deploy.config.servers import DockerServer, PanelServer, SftpServer
 lazy from deploy.deployer import Deployer
 lazy from deploy.docker.deployer import DockerDeployer
 lazy from deploy.panel.deployer import PanelDeployer
@@ -36,11 +36,15 @@ PluginsArgument = Annotated[
 
 
 def create_deployer(inventory: Inventory, server: AnyServer, dry_run: bool) -> Deployer[Any]:
-    if isinstance(server, DockerServer):
-        return DockerDeployer(inventory, server, dry_run=dry_run)
-    if isinstance(server, SftpServer):
-        return SftpDeployer(inventory, server, dry_run=dry_run)
-    return PanelDeployer(inventory, server, dry_run=dry_run)
+    match server:
+        case DockerServer():
+            return DockerDeployer(inventory, server, dry_run=dry_run)
+        case PanelServer():
+            return PanelDeployer(inventory, server, dry_run=dry_run)
+        case SftpServer():
+            return SftpDeployer(inventory, server, dry_run=dry_run)
+        case _:
+            assert_never(server)
 
 
 def find_deployers(server_id: str | None, dry_run: bool = False) -> list[Deployer[Any]]:

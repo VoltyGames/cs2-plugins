@@ -33,7 +33,7 @@ class Inventory(Model):
     runtime_image: str
     database: Database = Field(default_factory=Database)
     plugins: dict[str, Plugin]
-    servers: list[Annotated[DockerServer | PanelServer | SftpServer, Field(discriminator="kind")]]
+    servers: list[Annotated[AnyServer, Field(discriminator="kind")]]
 
     @classmethod
     def load(cls) -> Self:

@@ -1,7 +1,7 @@
 import io
 import stat
 from pathlib import Path
-from typing import IO
+from typing import IO, Self
 
 import paramiko
 
@@ -35,7 +35,10 @@ class SftpFiles:
         except (paramiko.SSHException, OSError) as error:
             raise DeployError(f"SFTP sign-in to {self.address} failed: {error}") from None
 
-    def close(self) -> None:
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *_: object) -> None:
         self._client.close()
 
     def read(self, path: str) -> str:
@@ -51,9 +54,11 @@ class SftpFiles:
 
     def delete(self, root: str, names: list[str]) -> list[str]:
         """Delete the entries under root that exist and return them."""
-        present = [name for name in names if self._find(f"{root}/{name}")]
-        for name in present:
-            self._remove_tree(f"{root}/{name}")
+        present: list[str] = []
+        for name in names:
+            if attributes := self._find(f"{root}/{name}"):
+                self._remove_tree(f"{root}/{name}", attributes)
+                present.append(name)
         return present
 
     def is_link(self, path: str) -> bool:
@@ -68,7 +73,8 @@ class SftpFiles:
         for local in sorted(source.rglob("*")):
             remote = f"{destination}/{local.relative_to(source).as_posix()}"
             if local.is_dir():
-                self._make_dirs(remote)
+                if not self._find(remote):
+                    self._sftp.mkdir(remote)
                 continue
             with local.open("rb") as file:
                 self._put(file, remote)
@@ -94,11 +100,10 @@ class SftpFiles:
             if not self._find(current):
                 self._sftp.mkdir(current)
 
-    def _remove_tree(self, path: str) -> None:
-        attributes = self._find(path)
-        if attributes and attributes.st_mode and stat.S_ISDIR(attributes.st_mode):
+    def _remove_tree(self, path: str, attributes: paramiko.SFTPAttributes) -> None:
+        if attributes.st_mode and stat.S_ISDIR(attributes.st_mode):
             for entry in self._sftp.listdir_attr(path):
-                self._remove_tree(f"{path}/{entry.filename}")
+                self._remove_tree(f"{path}/{entry.filename}", entry)
             self._sftp.rmdir(path)
         else:
             self._sftp.remove(path)

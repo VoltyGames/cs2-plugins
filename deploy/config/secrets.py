@@ -9,9 +9,8 @@ from deploy.paths import DEPLOY_DIR, ROOT
 class ServerSecrets:
     """A server's secrets from its .env file, which CI writes; the process env fills gaps."""
 
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.file = DEPLOY_DIR / "secrets" / name / ".env"
+    def __init__(self, folder: str) -> None:
+        self.file = DEPLOY_DIR / "secrets" / folder / ".env"
         values = dotenv_values(self.file) if self.file.is_file() else {}
         self._values = {**os.environ, **{name: value or "" for name, value in values.items()}}
         # CI names its own key file in the process env; a local path copied into the file loses.
